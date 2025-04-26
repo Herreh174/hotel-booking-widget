@@ -1,90 +1,126 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Бронирование гостиницы</title>
-  <!-- Flatpickr CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; }
-    input, button { width: 100%; margin: 8px 0; padding: 8px; }
-    #msg { margin-top: 12px; color: green; }
-  </style>
-</head>
+<head> … </head>
 <body>
-  <h2>Забронировать номер</h2>
+  <h2>Бронирование номера</h2>
 
-  <input type="email" id="email" placeholder="Ваш e-mail" required/>
-
-  <input id="date-range" placeholder="Выберите даты" readonly/>
-
-  <label>
-    <input type="checkbox" id="terms" />
-    Я принимаю условия проживания
+  <label>Тип номера:
+    <select id="room-type"></select>
   </label>
 
-  <button id="book-btn">Подтвердить и оплатить</button>
+  <label>Даты:
+    <input id="date-range" readonly/>
+  </label>
 
-  <hr/>
+  <div id="price">Итого: –</div>
 
-  <h4>Отмена бронирования</h4>
-  <input type="text" id="cancel-id" placeholder="Введите ID брони"/>
-  <button id="cancel-btn">Отменить бронь</button>
+  <label>
+    <input type="checkbox" id="terms"/>
+    Я принимаю условия
+  </label>
 
+  <button id="book-btn">Забронировать и оплатить</button>
   <div id="msg"></div>
 
-  <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <!-- YooKassa JS SDK -->
   <script src="https://checkout.yookassa.ru/v3/checkout.js"></script>
   <script>
-    flatpickr("#date-range", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      minDate: "today"
-    });
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbnCTrcN2LbEburkL9qebJdZGMoVkCK0xC9iS_e2hMG8OwyMzLXhZ8irdy92wKqy_F2Q/exec'; // тот же из Apps Script
 
-    const checkout = new window.YooCheckout({
-      shopId: "ВАШ_SHOP_ID_ЮKASSA",
-      checkoutUrl: "ВАШ_CHECKOUT_URL_ИЛИ_SECRET_KEY"
-    });
+    let roomTypes = [];
+    let bookedDates = [];
 
-    document.getElementById('book-btn').onclick = () => {
-      const email = document.getElementById('email').value.trim();
-      const dates = document.getElementById('date-range').value.split(' to ');
-      const ok = document.getElementById('terms').checked;
-      if (!email || dates.length<2) return alert('Заполните все поля и примите условия.');
-      checkout.createPayment({
-        amount: { value: "1000.00", currency: "RUB" },
-        confirmation: { type: "embedded" },
-        description: `Бронь ${dates[0]}→${dates[1]}`,
-        metadata: { email, checkIn: dates[0], checkOut: dates[1] }
-      }).then(p => {
-        if (p.status === 'succeeded') {
-          fetch("https://script.google.com/macros/s/AKfycbwbnCTrcN2LbEburkL9qebJdZGMoVkCK0xC9iS_e2hMG8OwyMzLXhZ8irdy92wKqy_F2Q/exec", {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'book', email, checkIn: dates[0], checkOut: dates[1]
-            })
-          }).then(r=>r.json()).then(res=>{
-            document.getElementById('msg').innerText = `Готово! ID: ${res.id}`;
-          });
-        }
-      }).catch(e=>alert('Ошибка платежа: '+e.message));
-    };
-
-    document.getElementById('cancel-btn').onclick = () => {
-      const id = document.getElementById('cancel-id').value.trim();
-      if (!id) return alert('Введите ID брони.');
-      fetch("https://script.google.com/macros/s/AKfycbwbnCTrcN2LbEburkL9qebJdZGMoVkCK0xC9iS_e2hMG8OwyMzLXhZ8irdy92wKqy_F2Q/exec", {
-        method: 'POST',
-        body: JSON.stringify({ action: 'cancel', id })
-      }).then(r=>r.json()).then(res=>{
-        document.getElementById('msg').innerText =
-          res.status==='CANCELLED' ? 'Бронь отменена.' : 'Бронь не найдена.';
+    // 1) Подгружаем типы номеров
+    fetch(`${SCRIPT_URL}?action=rooms`)
+      .then(r => r.json())
+      .then(rooms => {
+        roomTypes = rooms;
+        const sel = document.getElementById('room-type');
+        rooms.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.rate;
+          opt.text  = `${r.name} — ${r.rate}₽/ночь`;
+          sel.add(opt);
+        });
       });
-    };
+
+    // 2) Подгружаем занятость
+    fetch(`${SCRIPT_URL}?action=availability`)
+      .then(r => r.json())
+      .then(dates => {
+        bookedDates = dates;
+        initCalendar();
+      });
+
+    let fp;
+    function initCalendar() {
+      fp = flatpickr("#date-range", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: bookedDates,
+        onChange: updatePrice
+      });
+    }
+
+    function updatePrice(dates) {
+      const priceEl = document.getElementById('price');
+      if (dates.length < 2) return priceEl.innerText = "Итого: –";
+      const nights = (dates[1] - dates[0])/(1000*60*60*24);
+      const rate   = parseFloat(document.getElementById('room-type').value);
+      priceEl.innerText = `Итого: ${rate * nights}₽ (${nights}×${rate}₽)`;
+    }
+
+    document.getElementById('room-type')
+      .addEventListener('change', () => updatePrice(fp.selectedDates));
+
+    // YooKassa init
+    const checkout = new YooCheckout({
+      shopId: 'ВАШ_SHOP_ID',
+      checkoutUrl: 'ВАШ_CHECKOUT_URL'
+    });
+
+    document.getElementById('book-btn')
+      .addEventListener('click', () => {
+        const dates = fp.selectedDates;
+        const email = prompt("Введите e-mail");
+        const ok    = document.getElementById('terms').checked;
+        if (!email || dates.length<2 || !ok)
+          return alert("Заполните все поля и примите условия.");
+
+        const [inD,outD] = dates.map(d => fp.formatDate(d, "Y-m-d"));
+        const nights     = (dates[1]-dates[0])/(1000*60*60*24);
+        const rate       = parseFloat(document.getElementById('room-type').value);
+        const roomName   = document.getElementById('room-type')
+                              .selectedOptions[0].text.split(' — ')[0];
+        const total      = (rate * nights).toFixed(2);
+
+        checkout.createPayment({
+          amount: { value: total, currency: "RUB" },
+          confirmation: { type: "embedded" },
+          description: `Бронь ${roomName} ${inD}→${outD}`,
+          metadata: { email, checkIn: inD, checkOut: outD }
+        })
+        .then(p => {
+          if (p.status==='succeeded') {
+            return fetch(SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify({
+                action: 'book',
+                email, checkIn: inD, checkOut: outD,
+                roomName, price: total
+              })
+            });
+          }
+          throw new Error('Неуспешный статус: '+p.status);
+        })
+        .then(r=>r.json())
+        .then(res=>{
+          document.getElementById('msg')
+            .innerText = `Готово! Ваш ID: ${res.id}`;
+        })
+        .catch(e=>alert("Ошибка: "+e.message));
+      });
   </script>
 </body>
 </html>
