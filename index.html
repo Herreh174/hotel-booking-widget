@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Бронирование гостиницы</title>
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; }
+    input, button { width: 100%; margin: 8px 0; padding: 8px; }
+    #msg { margin-top: 12px; color: green; }
+  </style>
+</head>
+<body>
+  <h2>Забронировать номер</h2>
+
+  <input type="email" id="email" placeholder="Ваш e-mail" required/>
+
+  <input id="date-range" placeholder="Выберите даты" readonly/>
+
+  <label>
+    <input type="checkbox" id="terms" />
+    Я принимаю условия проживания
+  </label>
+
+  <button id="book-btn">Подтвердить и оплатить</button>
+
+  <hr/>
+
+  <h4>Отмена бронирования</h4>
+  <input type="text" id="cancel-id" placeholder="Введите ID брони"/>
+  <button id="cancel-btn">Отменить бронь</button>
+
+  <div id="msg"></div>
+
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- YooKassa JS SDK -->
+  <script src="https://checkout.yookassa.ru/v3/checkout.js"></script>
+  <script>
+    flatpickr("#date-range", {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      minDate: "today"
+    });
+
+    const checkout = new window.YooCheckout({
+      shopId: "ВАШ_SHOP_ID_ЮKASSA",
+      checkoutUrl: "ВАШ_CHECKOUT_URL_ИЛИ_SECRET_KEY"
+    });
+
+    document.getElementById('book-btn').onclick = () => {
+      const email = document.getElementById('email').value.trim();
+      const dates = document.getElementById('date-range').value.split(' to ');
+      const ok = document.getElementById('terms').checked;
+      if (!email || dates.length<2) return alert('Заполните все поля и примите условия.');
+      checkout.createPayment({
+        amount: { value: "1000.00", currency: "RUB" },
+        confirmation: { type: "embedded" },
+        description: `Бронь ${dates[0]}→${dates[1]}`,
+        metadata: { email, checkIn: dates[0], checkOut: dates[1] }
+      }).then(p => {
+        if (p.status === 'succeeded') {
+          fetch("https://script.google.com/macros/s/AKfycbwbnCTrcN2LbEburkL9qebJdZGMoVkCK0xC9iS_e2hMG8OwyMzLXhZ8irdy92wKqy_F2Q/exec", {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'book', email, checkIn: dates[0], checkOut: dates[1]
+            })
+          }).then(r=>r.json()).then(res=>{
+            document.getElementById('msg').innerText = `Готово! ID: ${res.id}`;
+          });
+        }
+      }).catch(e=>alert('Ошибка платежа: '+e.message));
+    };
+
+    document.getElementById('cancel-btn').onclick = () => {
+      const id = document.getElementById('cancel-id').value.trim();
+      if (!id) return alert('Введите ID брони.');
+      fetch("https://script.google.com/macros/s/AKfycbwbnCTrcN2LbEburkL9qebJdZGMoVkCK0xC9iS_e2hMG8OwyMzLXhZ8irdy92wKqy_F2Q/exec", {
+        method: 'POST',
+        body: JSON.stringify({ action: 'cancel', id })
+      }).then(r=>r.json()).then(res=>{
+        document.getElementById('msg').innerText =
+          res.status==='CANCELLED' ? 'Бронь отменена.' : 'Бронь не найдена.';
+      });
+    };
+  </script>
+</body>
+</html>
