@@ -311,7 +311,7 @@
       submitBtn.classList.remove('loading');
       submitBtn.disabled = true;
     });
-  }
+    }
 
   // Если выбран способ оплаты "Оплатить на сайте"
   if (data.payment_method === 'online') {
@@ -328,8 +328,8 @@
 
     // Редирект на тестовый API Юкассы
     window.location.href = `${paymentUrl}?${params.toString()}`;
-  }
-});
+    }
+    });
 
     function openModal() {
       document.getElementById('successModal').style.display = 'flex';
