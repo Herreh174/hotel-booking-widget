@@ -300,28 +300,31 @@ document.addEventListener('DOMContentLoaded', () => {
       comments: document.getElementById('comments').value
     };
 
-    fetch(API, {
-      method: 'POST',
-      body: JSON.stringify(p),
-      mode: 'cors'
-    })
-      .then(r => r.json())
-      .then(r => {
-        if (r.result === 'success') {
-          openModal(bookingID); // Показываем модальное окно с ID
-          document.getElementById('bookingForm').reset();
-          document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
-          document.getElementById('submitBtn').textContent = 'Забронировать';
-        } else {
-          showToast('Ошибка бронирования. Попробуйте снова.');
-        }
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify(p),
+        mode: 'cors'
       })
-      .catch(_ => showToast('Ошибка отправки формы.'))
-      .finally(_ => {
-        btn.classList.remove('loading');
-        btn.disabled = true;
-        showLoader(false);
-      });
+        .then(r => r.json())
+        .then(r => {
+          if (r.result === 'success') {
+            // Получаем уникальный ID бронирования
+            const bookingID = r.booking_id;
+            openModal(bookingID); // Показываем модальное окно с ID
+            document.getElementById('bookingForm').reset();
+            document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
+            document.getElementById('submitBtn').textContent = 'Забронировать';
+          } else {
+            showToast('Ошибка бронирования. Попробуйте снова.');
+          }
+        })
+        .catch(_ => showToast('Ошибка отправки формы.'))
+        .finally(_ => {
+          btn.classList.remove('loading');
+          btn.disabled = true;
+          showLoader(false);
+        });
+
   });
 });
 
