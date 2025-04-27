@@ -100,15 +100,13 @@
       </div>
 
       <div>
-        <label for="checkin" style="color:#333;">Дата заезда</label>
-        <input type="date" id="checkin" name="checkin" required
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <label for="checkin" style="color: #333;">Дата заезда</label>
+        <input type="date" id="checkin" name="checkin" required style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
       </div>
 
       <div>
-        <label for="checkout" style="color:#333;">Дата выезда</label>
-        <input type="date" id="checkout" name="checkout" required
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <label for="checkout" style="color: #333;">Дата выезда</label>
+        <input type="date" id="checkout" name="checkout" required style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
       </div>
 
       <div>
