@@ -1,102 +1,135 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Бронирование номера</title>
-  <!-- СТИЛИ -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Форма бронирования</title>
   <style>
     /* Общие стили */
-    #bookingForm { animation: fadeIn 1s ease forwards; }
+    #bookingForm {
+      animation: fadeIn 1s ease forwards;
+    }
+
     @keyframes fadeIn {
-      from {opacity:0; transform: translateY(20px);}
-      to   {opacity:1; transform: translateY(0);}
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Стили тостов */
     .toast {
-      position: fixed; top:20px; right:20px;
-      background:#FFD700; color:#333;
-      padding:12px 20px; border-radius:8px;
-      box-shadow:0 0 10px rgba(0,0,0,0.2);
-      opacity:0; animation: slideDown 0.5s ease forwards;
-      z-index:9999;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #FFD700;
+      color: #333;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      animation: slideDown 0.5s ease forwards;
+      z-index: 9999;
     }
+
     @keyframes slideDown {
-      from {opacity:0; transform: translateY(-20px);}
-      to   {opacity:1; transform: translateY(0);}
+      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-20px); }
     }
+
+    /* Анимация кнопки */
     .loading::after {
-      content:'...'; animation: dots 1s steps(5,end) infinite;
+      content: '...';
+      animation: dots 1s steps(5, end) infinite;
     }
+
     @keyframes dots {
-      0%,20%   {content:'';}
-      40%      {content:'.';}
-      60%      {content:'..';}
-      80%,100% {content:'...';}
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
     }
+
+    /* --- МОДАЛЬНОЕ ОКНО --- */
     .modal {
-      display:none; position:fixed; z-index:10000;
-      left:0; top:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.5);
-      justify-content:center; align-items:center;
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
       animation: fadeIn 0.4s forwards;
     }
+
     .modal-content {
-      background:#fff; padding:30px 40px; border-radius:16px;
-      text-align:center; max-width:400px;
-      transform:scale(0.8); opacity:0;
+      background-color: #fff;
+      padding: 30px 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 400px;
+      position: relative;
+      transform: scale(0.8);
+      opacity: 0;
       animation: zoomIn 0.4s forwards;
     }
-    .modal-icon { font-size:50px; color:#FFD700; margin-bottom:15px; }
-    .modal-button {
-      margin-top:20px; padding:10px 20px; background:#FFD700;
-      border:none; border-radius:8px; cursor:pointer;
-      color:#333; font-weight:bold; transition:background 0.3s;
+
+    .modal-icon {
+      font-size: 50px;
+      color: #FFD700;
+      margin-bottom: 15px;
     }
-    .modal-button:hover { background:#e6c200; }
+
+    .modal-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #FFD700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #333;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .modal-button:hover {
+      background: #e6c200;
+    }
+
+    /* --- АНИМАЦИИ --- */
     @keyframes zoomIn {
-      from {transform:scale(0.8); opacity:0;}
-      to   {transform:scale(1);   opacity:1;}
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
   </style>
 </head>
 <body>
-
-  <!-- ФОРМА -->
-  <div style="max-width:600px; margin:0 auto; padding:20px;
-              background:#fff; border-radius:12px;
-              box-shadow:0 0 20px rgba(0,0,0,0.05);
-              font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.05); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
     <h2 style="text-align:center; color:#333;">Бронирование номера</h2>
-    <form id="bookingForm" style="display:flex; flex-direction:column; gap:15px; position:relative;">
-      <div id="loader" style="display:none;position:absolute;top:50%;left:50%;
-                             transform:translate(-50%,-50%);
-                             background:rgba(255,255,255,0.8);
-                             padding:10px;border-radius:8px;">
-        Загрузка...
+
+    <form id="bookingForm" style="display: flex; flex-direction: column; gap: 15px; position: relative;">
+      <div id="loader" style="display:none; position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,0.8); padding:10px; border-radius:8px;">Загрузка...</div>
+
+      <div>
+        <label for="full_name" style="color: #333;">ФИО</label>
+        <input type="text" id="full_name" name="full_name" required placeholder="Иванов Иван" style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
       </div>
 
       <div>
-        <label for="full_name" style="color:#333;">ФИО</label>
-        <input type="text" id="full_name" name="full_name" required placeholder="Иванов Иван"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <label for="phone" style="color: #333;">Телефон</label>
+        <input type="tel" id="phone" name="phone" required placeholder="8-(999)-999-99-99" style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
       </div>
 
       <div>
-        <label for="phone" style="color:#333;">Телефон</label>
-        <input type="tel" id="phone" name="phone" required placeholder="8-(999)-999-99-99"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
-      </div>
-
-      <div>
-        <label for="email" style="color:#333;">Email</label>
-        <input type="email" id="email" name="email" required placeholder="email@example.com"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
-      </div>
-
-      <div>
-        <label for="guests" style="color:#333;">Количество отдыхающих</label>
-        <input type="number" id="guests" name="guests" min="1" max="6" required placeholder="1"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <label for="email" style="color: #333;">Email</label>
+        <input type="email" id="email" name="email" required placeholder="email@example.com" style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
       </div>
 
       <div>
@@ -110,21 +143,19 @@
       </div>
 
       <div>
-        <label for="room" style="color:#333;">Выберите номер</label>
-        <select id="room" name="room" disabled required
-                style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
-          <option value="">Сначала выберите даты и гостей</option>
+        <label for="room" style="color: #333;">Выберите номер</label>
+        <select id="room" name="room" disabled required style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
+          <option value="">Выберите даты и гостей</option>
         </select>
       </div>
 
-      <div id="total_price" style="font-weight:bold;color:#333;"></div>
+      <div id="total_price" style="margin-top: 5px; font-weight: bold; color: #333;"></div>
 
       <div>
-        <label for="comments" style="color:#333;">Пожелания по размещению</label>
-        <textarea id="comments" name="comments" placeholder="Например: нужна детская кроватка"
-                  style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;"></textarea>
+        <label for="comments" style="color: #333;">Пожелания по размещению</label>
+        <textarea id="comments" name="comments" placeholder="Например: нужна детская кроватка" style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;"></textarea>
       </div>
-      <!-- Добавляем в форму выбор способа оплаты -->
+
       <div>
         <label for="payment_method" style="color: #333;">Способ оплаты</label>
         <select id="payment_method" name="payment_method" required style="width: 100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
@@ -133,25 +164,18 @@
         </select>
       </div>
 
-      <div style="display:flex;align-items:center;">
-        <input type="checkbox" id="agree" name="agree" required style="margin-right:8px;">
-        <label for="agree" style="color:#333;font-size:14px;">
-          Я согласен с условиями проживания
-        </label>
+      <div style="display: flex; align-items: center;">
+        <input type="checkbox" id="agree" name="agree" required style="margin-right: 8px;">
+        <label for="agree" style="color: #333; font-size: 14px;">Я согласен с условиями проживания</label>
       </div>
 
-      <button id="submitBtn" type="submit" disabled
-              style="padding:12px;background:#FFD700;color:#333;
-                     border:none;border-radius:8px;font-weight:bold;
-                     cursor:pointer;">
-        Забронировать
-      </button>
+      <button id="submitBtn" type="submit" disabled style="padding: 12px; background: #FFD700; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Забронировать</button>
     </form>
   </div>
 
-  <!-- Модальное окно успеха -->
+  <!-- МОДАЛЬНОЕ ОКНО УСПЕХА -->
   <div id="successModal" class="modal">
-    <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-content" onclick="event.stopPropagation();">
       <div class="modal-icon">✅</div>
       <h3>Спасибо за бронирование!</h3>
       <p>Мы скоро свяжемся с вами для подтверждения.</p>
@@ -159,186 +183,111 @@
     </div>
   </div>
 
-  <!-- Контейнер для тостов -->
+  <!-- ТОСТЫ -->
   <div id="toastContainer"></div>
 
-  <!-- СКРИПТ -->
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbwF2Lp_g4ldH6WK6DkRKrGHdClBofEHlCvz3DD78bSxK_E34_rnArEr38glf-kD8aC2/exec';
+    const API = 'https://script.google.com/macros/s/AKfycbwtt6iWRJtPWfePJVoQJxg8lWL80DJthfB0PKf-Mv7aCjfCXrV_2mOwaZiZKPfxC56n/exec';
     let availableRooms = [];
 
     function showLoader(show) {
       document.getElementById('loader').style.display = show ? 'block' : 'none';
     }
-    function showToast(msg) {
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.innerText = msg;
-      document.getElementById('toastContainer').appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.classList.add('toast');
+      toast.textContent = message;
+      document.getElementById('toastContainer').appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
-    // JSONP callback
-    function displayAvailableRooms(res) {
-      showLoader(false);
-      if (res.error) {
-        showToast(res.error);
-        return;
-      }
-      availableRooms = res.available_rooms || [];
-      const roomSelect = document.getElementById('room');
-      roomSelect.innerHTML = '<option value="">Выберите номер</option>';
-      availableRooms.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.room_id;
-        opt.dataset.price = r.price;
-        opt.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
-        roomSelect.appendChild(opt);
-      });
-      roomSelect.disabled = availableRooms.length === 0;
-      updateTotalPrice();
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      let mm = today.getMonth() + 1;
+      let dd = today.getDate();
+      if (mm < 10) mm = '0' + mm;
+      if (dd < 10) dd = '0' + dd;
+      const todayDate = yyyy + '-' + mm + '-' + dd;
 
-    function fetchRooms() {
-      const ci = document.getElementById('checkin').value;
-      const co = document.getElementById('checkout').value;
-      const g  = +document.getElementById('guests').value;
-      if (!ci || !co || !g) return;
-      if (new Date(co) <= new Date(ci)) {
-        showToast('Дата выезда должна быть позже даты заезда.');
-        return;
-      }
+      // Устанавливаем минимальную дату для checkin и checkout
+      document.getElementById('checkin').setAttribute('min', todayDate);
+      document.getElementById('checkout').setAttribute('min', todayDate);
+
+      // Загрузка номеров и цен
       showLoader(true);
-      const old = document.getElementById('jsonp');
-      if (old) old.remove();
-      const params = `?checkin=${encodeURIComponent(ci)}&checkout=${encodeURIComponent(co)}&callback=displayAvailableRooms`;
-      const s = document.createElement('script');
-      s.src = API + params;
-      s.id = 'jsonp';
-      document.body.appendChild(s);
-    }
-
-    function updateTotalPrice() {
-      const sel = document.getElementById('room');
-      const nights = countNights();
-      const opt = sel.options[sel.selectedIndex];
-      if (opt && opt.dataset.price && nights > 0) {
-        const total = parseFloat(opt.dataset.price) * nights;
-        const btn = document.getElementById('submitBtn');
-        btn.textContent = `К оплате ${total} ₽`;
-        btn.disabled = false;
-      } else {
-        const btn = document.getElementById('submitBtn');
-        btn.textContent = 'Забронировать';
-        btn.disabled = true;
-      }
-    }
-
-    function countNights() {
-      const a = new Date(document.getElementById('checkin').value);
-      const b = new Date(document.getElementById('checkout').value);
-      return Math.ceil((b - a) / (1000*60*60*24));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      ['checkin','checkout','guests'].forEach(id =>
-        document.getElementById(id).addEventListener('change', fetchRooms)
-      );
-      document.getElementById('room').addEventListener('change', updateTotalPrice);
-      document.getElementById('phone').addEventListener('input', e => {
-        let x = e.target.value.replace(/\D/g,'').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-        e.target.value = !x[2] ? x[1]
-          : `${x[1]}-(${x[2]})-${x[3]}` +
-            (x[4]?`-${x[4]}`:'') +
-            (x[5]?`-${x[5]}`:'');
-      });
-      // submit
-      document.getElementById('bookingForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-    
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.classList.add('loading');
-      submitBtn.disabled = true;
-    
-      if (!document.getElementById('agree').checked) {
-        showToast('Вы должны согласиться с условиями проживания!');
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-        return;
-      }
-    
-      const data = {
-        full_name: document.getElementById('full_name').value,
-        phone: document.getElementById('phone').value,
-        email: document.getElementById('email').value,
-        guests: document.getElementById('guests').value,
-        checkin: document.getElementById('checkin').value,
-        checkout: document.getElementById('checkout').value,
-        room_id: document.getElementById('room').value,
-        room_type: document.getElementById('room').options[document.getElementById('room').selectedIndex].innerText,
-        total_price: document.getElementById('total_price').innerText.replace(/\D/g, ''),
-        comments: document.getElementById('comments').value,
-        payment_method: document.getElementById('payment_method').value // новый параметр
-      };
-    
-      showLoader(true);
-    
-      // Если выбран способ оплаты "Наличными при заселении"
-      if (data.payment_method === 'cash') {
-        // Отправляем данные в Google Таблицу (или другой бекенд)
-        fetch(API, {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: { "Content-Type": "application/json" }
+      fetch(API)
+        .then(res => res.json())
+        .then(data => {
+          availableRooms = data;
+          updateRooms();
+          showLoader(false);
         })
-    .then(response => response.json())
-    .then(data => {
-      if (data.result === 'success') {
-        openModal();
-        document.getElementById('bookingForm').reset();
-        document.getElementById('room').innerHTML = '<option value="">Выберите даты и гостей</option>';
-        document.getElementById('total_price').innerText = '';
-      } else {
-        showToast('Ошибка бронирования. Попробуйте снова.');
+        .catch(err => {
+          console.error('Ошибка загрузки:', err);
+          showToast('Не удалось загрузить данные о номерах');
+          showLoader(false);
+        });
+
+      function updateRooms() {
+        const roomSelect = document.getElementById('room');
+        roomSelect.innerHTML = '<option value="">Выберите номер</option>';
+        availableRooms.forEach(room => {
+          roomSelect.innerHTML += `<option value="${room.id}">${room.name} - ${room.price} рублей</option>`;
+        });
       }
-    })
-    .catch(err => {
-      console.error(err);
-      showToast('Ошибка отправки формы.');
-    })
-    .finally(() => {
-      showLoader(false);
-      submitBtn.classList.remove('loading');
-      submitBtn.disabled = true;
-    });
-    }
 
-  // Если выбран способ оплаты "Оплатить на сайте"
-  if (data.payment_method === 'online') {
-    // Переадресовываем пользователя на тестовый API Юкассы
-    const paymentUrl = 'https://demomoney.yookassa.ru/checkout';
-    
-    // Передаем нужные параметры в URL (например, сумму и данные)
-    const params = new URLSearchParams({
-      amount: data.total_price, // передаем итоговую сумму
-      email: data.email,
-      phone: data.phone,
-      room: data.room_type
-    });
+      // Проверка на возможность бронирования
+      document.getElementById('checkin').addEventListener('change', function () {
+        updateTotalPrice();
+      });
 
-    // Редирект на тестовый API Юкассы
-    window.location.href = `${paymentUrl}?${params.toString()}`;
-    }
-    });
+      document.getElementById('checkout').addEventListener('change', function () {
+        updateTotalPrice();
+      });
 
-    function openModal() {
-      document.getElementById('successModal').style.display = 'flex';
-      setTimeout(closeModal,5000);
-    }
-    function closeModal() {
-      document.getElementById('successModal').style.display = 'none';
-    }
-    document.getElementById('successModal').addEventListener('click', closeModal);
+      document.getElementById('room').addEventListener('change', function () {
+        updateTotalPrice();
+      });
+
+      // Функция для подсчета стоимости
+      function updateTotalPrice() {
+        const checkinDate = new Date(document.getElementById('checkin').value);
+        const checkoutDate = new Date(document.getElementById('checkout').value);
+        const roomId = document.getElementById('room').value;
+
+        if (checkinDate && checkoutDate && roomId) {
+          const selectedRoom = availableRooms.find(room => room.id === roomId);
+          const days = (checkoutDate - checkinDate) / (1000 * 3600 * 24);
+          const total = selectedRoom.price * days;
+          document.getElementById('total_price').textContent = `Итоговая стоимость: ${total} рублей`;
+          document.getElementById('submitBtn').textContent = `К оплате: ${total} рублей`;
+          document.getElementById('submitBtn').disabled = false;
+        } else {
+          document.getElementById('total_price').textContent = '';
+          document.getElementById('submitBtn').disabled = true;
+        }
+      }
+
+      // Обработчик отправки формы
+      document.getElementById('bookingForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const paymentMethod = document.getElementById('payment_method').value;
+
+        if (paymentMethod === 'cash') {
+          showToast('Заявка принята, оплатить можно будет при заселении');
+          document.getElementById('successModal').style.display = 'flex';
+        } else {
+          window.location.href = 'https://payment.yookassa.ru/test-payment';
+        }
+      });
+
+      // Закрытие модального окна
+      function closeModal() {
+        document.getElementById('successModal').style.display = 'none';
+      }
+    });
   </script>
 </body>
 </html>
