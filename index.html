@@ -174,8 +174,8 @@
 
     // Ограничение на дату
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('checkin').setAttribute('max', today);
-    document.getElementById('checkout').setAttribute('max', today);
+    document.getElementById('checkin').setAttribute('min', today+1);
+    document.getElementById('checkout').setAttribute('min', today+2);
 
     // JSONP callback
     function displayAvailableRooms(res) {
