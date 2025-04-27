@@ -95,7 +95,7 @@
 
       <div>
         <label for="guests" style="color:#333;">Количество отдыхающих</label>
-        <input type="number" id="guests" name="guests" min="1" max="6" required placeholder="1"
+        <input type="number" id="guests" name="guests" min="1" max="6" value="1" required placeholder="1"
                style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
@@ -171,6 +171,11 @@
       document.getElementById('toastContainer').appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
+
+    // Ограничение на дату
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checkin').setAttribute('max', today);
+    document.getElementById('checkout').setAttribute('max', today);
 
     // JSONP callback
     function displayAvailableRooms(res) {
