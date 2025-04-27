@@ -232,6 +232,10 @@
 
       function updateRooms() {
         const roomSelect = document.getElementById('room');
+        if (availableRooms.length === 0) {
+          showToast('Нет доступных номеров');
+          return;
+        }
         roomSelect.innerHTML = '<option value="">Выберите номер</option>';
         availableRooms.forEach(room => {
           roomSelect.innerHTML += `<option value="${room.id}">${room.name} - ${room.price} рублей</option>`;
