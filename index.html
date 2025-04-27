@@ -259,6 +259,8 @@
       document.getElementById('room').addEventListener('change', updateTotalPrice);
 
       // submit
+      const bookingID = generateBookingID(); // Генерация ID бронирования
+      
       document.getElementById('bookingForm').addEventListener('submit', e => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
@@ -270,11 +272,8 @@
           return;
         }
       
-        // Генерация ID бронирования до отправки данных
-        const bookingID = generateBookingID();
-      
         const p = {
-          booking_id: bookingID, // Теперь мы передаем сгенерированный ID
+          booking_id: bookingID,  // Убедитесь, что передаете правильное значение
           full_name: document.getElementById('full_name').value,
           phone:     document.getElementById('phone').value,
           email:     document.getElementById('email').value,
@@ -288,7 +287,9 @@
           comments:  document.getElementById('comments').value
         };
       
-        // Отправка данных на сервер
+        // Логируем передаваемые данные для отладки
+        console.log("Переданные данные: ", p);
+      
         fetch(API, {
           method: 'POST',
           body: JSON.stringify(p),
@@ -297,7 +298,8 @@
         .then(r => r.json())
         .then(r => {
           if (r.result === 'success') {
-            document.getElementById('bookingID').textContent = bookingID; // Показываем сгенерированный ID
+            const bookingID = generateBookingID(); // Генерация ID бронирования
+            document.getElementById('bookingID').textContent = bookingID; // Отображаем в модальном окне
             openModal();
             document.getElementById('bookingForm').reset();
             document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
