@@ -254,43 +254,43 @@
       });
       // submit
       document.getElementById('bookingForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.classList.add('loading');
-  submitBtn.disabled = true;
-
-  if (!document.getElementById('agree').checked) {
-    showToast('Вы должны согласиться с условиями проживания!');
-    submitBtn.classList.remove('loading');
-    submitBtn.disabled = false;
-    return;
-  }
-
-  const data = {
-    full_name: document.getElementById('full_name').value,
-    phone: document.getElementById('phone').value,
-    email: document.getElementById('email').value,
-    guests: document.getElementById('guests').value,
-    checkin: document.getElementById('checkin').value,
-    checkout: document.getElementById('checkout').value,
-    room_id: document.getElementById('room').value,
-    room_type: document.getElementById('room').options[document.getElementById('room').selectedIndex].innerText,
-    total_price: document.getElementById('total_price').innerText.replace(/\D/g, ''),
-    comments: document.getElementById('comments').value,
-    payment_method: document.getElementById('payment_method').value // новый параметр
-  };
-
-  showLoader(true);
-
-  // Если выбран способ оплаты "Наличными при заселении"
-  if (data.payment_method === 'cash') {
-    // Отправляем данные в Google Таблицу (или другой бекенд)
-    fetch(API, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" }
-    })
+      e.preventDefault();
+    
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+    
+      if (!document.getElementById('agree').checked) {
+        showToast('Вы должны согласиться с условиями проживания!');
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        return;
+      }
+    
+      const data = {
+        full_name: document.getElementById('full_name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        guests: document.getElementById('guests').value,
+        checkin: document.getElementById('checkin').value,
+        checkout: document.getElementById('checkout').value,
+        room_id: document.getElementById('room').value,
+        room_type: document.getElementById('room').options[document.getElementById('room').selectedIndex].innerText,
+        total_price: document.getElementById('total_price').innerText.replace(/\D/g, ''),
+        comments: document.getElementById('comments').value,
+        payment_method: document.getElementById('payment_method').value // новый параметр
+      };
+    
+      showLoader(true);
+    
+      // Если выбран способ оплаты "Наличными при заселении"
+      if (data.payment_method === 'cash') {
+        // Отправляем данные в Google Таблицу (или другой бекенд)
+        fetch(API, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { "Content-Type": "application/json" }
+        })
     .then(response => response.json())
     .then(data => {
       if (data.result === 'success') {
