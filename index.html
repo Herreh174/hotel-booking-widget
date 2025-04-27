@@ -286,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingID = generateBookingID();
 
     const p = {
+      booking_id: bookingID, // Добавляем уникальный ID
       full_name: document.getElementById('full_name').value,
       phone: document.getElementById('phone').value,
       email: document.getElementById('email').value,
@@ -307,8 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(r => r.json())
       .then(r => {
         if (r.result === 'success') {
-          // Получаем уникальный ID бронирования
-          const bookingID = r.booking_id;
           openModal(bookingID); // Показываем модальное окно с ID
           document.getElementById('bookingForm').reset();
           document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
