@@ -263,13 +263,18 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.classList.add('loading');
+        
         if (!document.getElementById('agree').checked) {
           showToast('Нужно согласиться с условиями проживания!');
           btn.classList.remove('loading');
           return;
         }
+      
+        // Генерация ID бронирования до отправки данных
+        const bookingID = generateBookingID();
+      
         const p = {
-          booking_id: bookingID,
+          booking_id: bookingID, // Теперь мы передаем сгенерированный ID
           full_name: document.getElementById('full_name').value,
           phone:     document.getElementById('phone').value,
           email:     document.getElementById('email').value,
@@ -282,16 +287,17 @@
           total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
           comments:  document.getElementById('comments').value
         };
+      
+        // Отправка данных на сервер
         fetch(API, {
           method: 'POST',
           body: JSON.stringify(p),
           mode: 'cors'
         })
-        .then(r=>r.json())
-        .then(r=>{
-          if (r.result==='success') {
-            const bookingID = generateBookingID(); // Генерируем ID бронирования
-            document.getElementById('bookingID').textContent = bookingID; // Отображаем в модальном окне
+        .then(r => r.json())
+        .then(r => {
+          if (r.result === 'success') {
+            document.getElementById('bookingID').textContent = bookingID; // Показываем сгенерированный ID
             openModal();
             document.getElementById('bookingForm').reset();
             document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
@@ -300,8 +306,8 @@
             showToast('Ошибка бронирования. Попробуйте снова.');
           }
         })
-        .catch(_=> showToast('Ошибка отправки формы.'))
-        .finally(_=>{
+        .catch(_ => showToast('Ошибка отправки формы.'))
+        .finally(_ => {
           btn.classList.remove('loading');
           btn.disabled = true;
           showLoader(false);
