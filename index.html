@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Бронирование номера</title>
-  <!-- СТИЛИ -->
   <style>
     /* Общие стили */
     #bookingForm { animation: fadeIn 1s ease forwards; }
@@ -61,62 +60,44 @@
 </head>
 <body>
 
-  <!-- ФОРМА -->
-  <div style="max-width:600px; margin:0 auto; padding:20px;
-              background:#fff; border-radius:12px;
-              box-shadow:0 0 20px rgba(0,0,0,0.05);
-              font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <div style="max-width:600px; margin:0 auto; padding:20px; background:#fff; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.05); font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
     <h2 style="text-align:center; color:#333;">Бронирование номера</h2>
     <form id="bookingForm" style="display:flex; flex-direction:column; gap:15px; position:relative;">
-      <div id="loader" style="display:none;position:absolute;top:50%;left:50%;
-                             transform:translate(-50%,-50%);
-                             background:rgba(255,255,255,0.8);
-                             padding:10px;border-radius:8px;">
-        Загрузка...
-      </div>
-
-      <!-- Входные поля формы (ФИО, телефон, email, количество гостей, и даты) -->
+      <div id="loader" style="display:none;position:absolute;top:50%;left:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,0.8); padding:10px;border-radius:8px;">Загрузка...</div>
 
       <div>
         <label for="full_name" style="color:#333;">ФИО</label>
-        <input type="text" id="full_name" name="full_name" required placeholder="Иванов Иван"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="text" id="full_name" name="full_name" required placeholder="Иванов Иван" style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="phone" style="color:#333;">Телефон</label>
-        <input type="tel" id="phone" name="phone" required placeholder="8-(999)-999-99-99"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="tel" id="phone" name="phone" required placeholder="8-(999)-999-99-99" style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="email" style="color:#333;">Email</label>
-        <input type="email" id="email" name="email" required placeholder="email@example.com"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="email" id="email" name="email" required placeholder="email@example.com" style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="guests" style="color:#333;">Количество отдыхающих</label>
-        <input type="number" id="guests" name="guests" min="1" max="6" required placeholder="1"
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="number" id="guests" name="guests" min="1" max="6" required placeholder="1" style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="checkin" style="color:#333;">Дата заезда</label>
-        <input type="date" id="checkin" name="checkin" required
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="date" id="checkin" name="checkin" required style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="checkout" style="color:#333;">Дата выезда</label>
-        <input type="date" id="checkout" name="checkout" required
-               style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <input type="date" id="checkout" name="checkout" required style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
       </div>
 
       <div>
         <label for="room" style="color:#333;">Выберите номер</label>
-        <select id="room" name="room" disabled required
-                style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+        <select id="room" name="room" disabled required style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;">
           <option value="">Сначала выберите даты и гостей</option>
         </select>
       </div>
@@ -125,27 +106,18 @@
 
       <div>
         <label for="comments" style="color:#333;">Пожелания по размещению</label>
-        <textarea id="comments" name="comments" placeholder="Например: нужна детская кроватка"
-                  style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;"></textarea>
+        <textarea id="comments" name="comments" placeholder="Например: нужна детская кроватка" style="width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;"></textarea>
       </div>
 
       <div style="display:flex;align-items:center;">
         <input type="checkbox" id="agree" name="agree" required style="margin-right:8px;">
-        <label for="agree" style="color:#333;font-size:14px;">
-          Я согласен с условиями проживания
-        </label>
+        <label for="agree" style="color:#333;font-size:14px;">Я согласен с условиями проживания</label>
       </div>
 
-      <button id="submitBtn" type="submit" disabled
-              style="padding:12px;background:#FFD700;color:#333;
-                     border:none;border-radius:8px;font-weight:bold;
-                     cursor:pointer;">
-        Забронировать
-      </button>
+      <button id="submitBtn" type="submit" disabled style="padding:12px;background:#FFD700;color:#333; border:none;border-radius:8px;font-weight:bold; cursor:pointer;">Забронировать</button>
     </form>
   </div>
 
-  <!-- Модальное окно успеха -->
   <div id="successModal" class="modal">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-icon">✅</div>
@@ -156,18 +128,28 @@
     </div>
   </div>
 
-  <!-- Контейнер для тостов -->
+  <!-- Вкладка для отмены бронирования -->
+  <div id="cancelTab" style="padding: 20px; margin-top: 20px; background: #f5f5f5; border-radius: 12px;">
+    <h3 style="text-align:center;">Отмена бронирования</h3>
+    <form id="cancelForm" style="display: flex; flex-direction: column; gap: 15px;">
+      <div>
+        <label for="cancelID" style="color:#333;">ID бронирования</label>
+        <input type="text" id="cancelID" name="cancelID" placeholder="Введите ID брони" required style="width:100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
+      </div>
+      <div>
+        <label for="cancelPhone" style="color:#333;">Телефон</label>
+        <input type="tel" id="cancelPhone" name="cancelPhone" placeholder="Введите номер телефона" required style="width:100%; padding: 10px; border: 2px solid #FFD700; border-radius: 8px;">
+      </div>
+      <button type="submit" style="padding: 12px; background: #FFD700; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Отменить бронирование</button>
+    </form>
+    <div id="cancelResult" style="margin-top: 15px;"></div>
+  </div>
+
   <div id="toastContainer"></div>
 
-  <!-- СКРИПТ -->
   <script>
     const API = 'https://script.google.com/macros/s/AKfycbx1HGikEA4w81gcxNKVVmTHSYtn_WIS5VIigm3eY2LGR9cAt73hiW3kOIiz67tFcqX6/exec';
     let availableRooms = [];
-
-    // Функция для генерации уникального ID бронирования
-    function generateBookingID() {
-      return Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000;
-    }
 
     function showLoader(show) {
       document.getElementById('loader').style.display = show ? 'block' : 'none';
@@ -181,7 +163,6 @@
       setTimeout(() => t.remove(), 3000);
     }
 
-    // JSONP callback
     function displayAvailableRooms(res) {
       showLoader(false);
       if (res.error) {
@@ -238,93 +219,52 @@
     }
 
     function countNights() {
-      const a = new Date(document.getElementById('checkin').value);
-      const b = new Date(document.getElementById('checkout').value);
-      return Math.ceil((b - a) / (1000*60*60*24));
+      const ci = new Date(document.getElementById('checkin').value);
+      const co = new Date(document.getElementById('checkout').value);
+      return (co - ci) / (1000 * 60 * 60 * 24);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-
-      const checkin = document.getElementById('checkin');
-      const checkout = document.getElementById('checkout');
-
-      checkin.min = checkout.min = tomorrow.toISOString().split('T')[0];
-
-      ['checkin','checkout','guests'].forEach(id =>
-        document.getElementById(id).addEventListener('change', fetchRooms)
-      );
-      document.getElementById('room').addEventListener('change', updateTotalPrice);
-
-      // submit
-      const bookingID = generateBookingID(); // Генерация ID бронирования
-      
-      document.getElementById('bookingForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.classList.add('loading');
-        
-        if (!document.getElementById('agree').checked) {
-          showToast('Нужно согласиться с условиями проживания!');
-          btn.classList.remove('loading');
-          return;
+    function submitBooking(e) {
+      e.preventDefault();
+      showLoader(true);
+      const formData = new FormData(e.target);
+      const formObj = {};
+      formData.forEach((v, k) => formObj[k] = v);
+      formObj.room_id = document.getElementById('room').value;
+      const params = new URLSearchParams(formObj).toString();
+      fetch(`${API}?${params}`).then(res => res.json()).then(data => {
+        showLoader(false);
+        if (data.error) {
+          showToast(data.error);
+        } else {
+          document.getElementById('bookingID').textContent = data.booking_id;
+          document.getElementById('successModal').style.display = 'flex';
         }
-      
-        const p = {
-          booking_id: bookingID,  // Убедитесь, что передаете правильное значение
-          full_name: document.getElementById('full_name').value,
-          phone:     document.getElementById('phone').value,
-          email:     document.getElementById('email').value,
-          guests:    document.getElementById('guests').value,
-          checkin:   document.getElementById('checkin').value,
-          checkout:  document.getElementById('checkout').value,
-          room_id:   document.getElementById('room').value,
-          room_type: document.getElementById('room')
-                         .options[document.getElementById('room').selectedIndex].innerText,
-          total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
-          comments:  document.getElementById('comments').value
-        };
-      
-        // Логируем передаваемые данные для отладки
-        console.log("Переданные данные: ", p);
-      
-        fetch(API, {
-          method: 'POST',
-          body: JSON.stringify(p),
-          mode: 'cors'
-        })
-        .then(r => r.json())
-        .then(r => {
-          if (r.result === 'success') {
-            const bookingID = generateBookingID(); // Генерация ID бронирования
-            document.getElementById('bookingID').textContent = bookingID; // Отображаем в модальном окне
-            openModal();
-            document.getElementById('bookingForm').reset();
-            document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
-            document.getElementById('submitBtn').textContent = 'Забронировать';
-          } else {
-            showToast('Ошибка бронирования. Попробуйте снова.');
-          }
-        })
-        .catch(_ => showToast('Ошибка отправки формы.'))
-        .finally(_ => {
-          btn.classList.remove('loading');
-          btn.disabled = true;
-          showLoader(false);
-        });
       });
-    });
-
-    function openModal() {
-      document.getElementById('successModal').style.display = 'flex';
-      setTimeout(closeModal,5000);
     }
+
     function closeModal() {
       document.getElementById('successModal').style.display = 'none';
     }
-    document.getElementById('successModal').addEventListener('click', closeModal);
+
+    document.getElementById('bookingForm').addEventListener('submit', submitBooking);
+
+    // Отмена бронирования
+    document.getElementById('cancelForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const cancelID = document.getElementById('cancelID').value;
+      const cancelPhone = document.getElementById('cancelPhone').value;
+      fetch(`${API}?action=cancelBooking&id=${cancelID}&phone=${cancelPhone}`).then(response => response.json())
+        .then(data => {
+          const cancelResult = document.getElementById('cancelResult');
+          if (data.success) {
+            cancelResult.textContent = 'Бронирование отменено успешно!';
+          } else {
+            cancelResult.textContent = 'Ошибка отмены бронирования. Попробуйте еще раз.';
+          }
+        });
+    });
   </script>
+
 </body>
 </html>
