@@ -154,7 +154,7 @@
     }
 
     // Отправляем GET-запрос в Google Apps Script для поиска брони
-    fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?type=check&phone=' + phone + '&booking_id=' + bookingID)
+    fetch('https://script.google.com/macros/s/AKfycbx1HGikEA4w81gcxNKVVmTHSYtn_WIS5VIigm3eY2LGR9cAt73hiW3kOIiz67tFcqX6/exec?type=check&phone=' + phone + '&booking_id=' + bookingID)
       .then(res => res.json())
       .then(data => {
         if (data && data.booking) {
