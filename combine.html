@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Система Бронирования</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h2, h3 {
+      text-align: center;
+    }
+    form, #manageForm {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select, textarea, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid #FFD700;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      background: #FFD700;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #FFC107;
+    }
+    #manageBtn {
+      display: block;
+      margin: 20px auto;
+      width: 220px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #323232;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 999;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Форма бронирования</h2>
+
+  <form id="bookingForm">
+    <input type="text" id="full_name" placeholder="ФИО" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="tel" id="phone" placeholder="Телефон" required>
+    <input type="number" id="guests" placeholder="Количество гостей" required min="1">
+    <input type="date" id="checkin" placeholder="Дата заезда" required>
+    <input type="date" id="checkout" placeholder="Дата выезда" required>
+    <select id="room_type" required>
+      <option value="">Выберите тип номера</option>
+      <option value="Стандарт">Стандарт</option>
+      <option value="Люкс">Люкс</option>
+    </select>
+    <textarea id="comments" placeholder="Дополнительные пожелания"></textarea>
+    <button type="submit">Забронировать</button>
+  </form>
+
+  <button id="manageBtn">Управление бронированием</button>
+
+  <div id="manageForm" style="display: none;">
+    <h3>Управление бронированием</h3>
+    <input type="text" id="manage_id" placeholder="Введите ID бронирования (например: N-1234)">
+    <button onclick="searchBooking()">Найти</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API = 'https://script.google.com/macros/s/ВАШ_ID_СКРИПТА/exec'; // Замените на ваш URL
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function generateBookingID() {
+      const randomNumber = Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000;
+      return `N-${randomNumber}`;
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const booking_id = generateBookingID();
+      const data = {
+        action: 'book',
+        booking_id,
+        full_name: document.getElementById('full_name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        guests: document.getElementById('guests').value,
+        checkin: document.getElementById('checkin').value,
+        checkout: document.getElementById('checkout').value,
+        room_type: document.getElementById('room_type').value,
+        comments: document.getElementById('comments').value
+      };
+
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          showToast('Бронирование успешно создано: ' + booking_id);
+          document.getElementById('bookingForm').reset();
+        } else {
+          showToast('Ошибка при бронировании');
+        }
+      });
+    });
+
+    document.getElementById('manageBtn').addEventListener('click', () => {
+      document.getElementById('bookingForm').style.display = 'none';
+      document.getElementById('manageForm').style.display = 'block';
+    });
+
+    function searchBooking() {
+      const id = document.getElementById('manage_id').value.trim();
+      if (!id.startsWith('N-')) {
+        showToast('Введите корректный ID (например: N-1234)');
+        return;
+      }
+
+      fetch(`${API}?action=getBooking&id=${encodeURIComponent(id)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.error) {
+            showToast('Бронирование не найдено');
+            return;
+          }
+
+          const win = window.open('', '', 'width=600,height=600');
+          win.document.write(`
+            <html><head><title>Детали бронирования</title></head>
+            <body style="font-family: sans-serif; padding: 20px;">
+              <h3>Детали бронирования</h3>
+              <p><strong>ID:</strong> ${data.booking_id}</p>
+              <p><strong>Имя:</strong> ${data.full_name}</p>
+              <p><strong>Email:</strong> ${data.email}</p>
+              <p><strong>Телефон:</strong> ${data.phone}</p>
+              <p><strong>Гости:</strong> ${data.guests}</p>
+              <p><strong>Даты:</strong> ${data.checkin} — ${data.checkout}</p>
+              <p><strong>Номер:</strong> ${data.room_type}</p>
+              <p><strong>Комментарий:</strong> ${data.comments || '-'}</p>
+              <button onclick="cancelBooking('${id}')">Отменить бронирование</button>
+              <button onclick="window.close()">Закрыть</button>
+              <script>
+                function cancelBooking(id) {
+                  fetch('${API}', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'cancel', id }),
+                    headers: { 'Content-Type': 'application/json' }
+                  })
+                  .then(res => res.json())
+                  .then(r => {
+                    if (r.result === 'success') {
+                      alert('Бронирование успешно отменено');
+                      window.close();
+                    } else {
+                      alert('Не удалось отменить бронирование');
+                    }
+                  });
+                }
+              <\/script>
+            </body></html>
+          `);
+        });
+    }
+  </script>
+
+</body>
+</html>
