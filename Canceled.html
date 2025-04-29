@@ -1,4 +1,9 @@
-<div class="form-container">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Отменить бронирование</title>
+  <div class="form-container">
   <div id="bookingForm">
     <h3>Отмена бронирования</h3>
     <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
@@ -155,10 +160,10 @@
         if (data && data.booking) {
           selectedBooking = data.booking;
           document.getElementById('modalText').innerHTML =
-            `<b>Имя:</b> ${data.booking.full_name}<br>
+            <b>Имя:</b> ${data.booking.full_name}<br>
              <b>Телефон:</b> ${data.booking.phone}<br>
              <b>Даты:</b> ${data.booking.checkin} - ${data.booking.checkout}<br><br>
-             Вы уверены, что хотите отменить бронирование?`;
+             Вы уверены, что хотите отменить бронирование?;
           openModal();
         } else {
           alert('Бронирование не найдено');
@@ -197,3 +202,5 @@
     .catch(() => alert('Ошибка запроса'));
   }
 </script>
+</head>
+<body>
