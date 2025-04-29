@@ -1,202 +1,234 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Система Бронирования</title>
+  <meta charset="UTF-8" />
+  <title>Бронирование номера</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f8f8f8;
-      margin: 0;
-      padding: 20px;
+      font-family: Helvetica, Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
     }
-    h2, h3 {
-      text-align: center;
-    }
-    form, #manageForm {
+    .container {
       max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
+      margin: 0 auto;
       background: #fff;
+      padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
     }
-    input, select, textarea, button {
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      color: #333;
+    }
+    input, select, textarea {
       width: 100%;
-      margin: 10px 0;
       padding: 10px;
-      border-radius: 8px;
       border: 2px solid #FFD700;
-      box-sizing: border-box;
-      font-size: 16px;
+      border-radius: 8px;
+      margin-top: 5px;
     }
     button {
+      padding: 12px;
       background: #FFD700;
+      color: #333;
       border: none;
-      cursor: pointer;
+      border-radius: 8px;
       font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
     }
     button:hover {
-      background: #FFC107;
-    }
-    #manageBtn {
-      display: block;
-      margin: 20px auto;
-      width: 220px;
+      background: #e6c200;
     }
     .toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #323232;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      opacity: 0;
-      transition: opacity 0.5s;
-      z-index: 999;
+      position: fixed; top: 20px; right: 20px;
+      background: #FFD700; color: #333;
+      padding: 12px 20px; border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 9999;
     }
-    .toast.show {
-      opacity: 1;
-    }
+    #manageForm { display: none; }
   </style>
 </head>
 <body>
 
-  <h2>Форма бронирования</h2>
+<div class="container">
+  <h2>Бронирование номера</h2>
 
+  <!-- Основная форма бронирования -->
   <form id="bookingForm">
-    <input type="text" id="full_name" placeholder="ФИО" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="tel" id="phone" placeholder="Телефон" required>
-    <input type="number" id="guests" placeholder="Количество гостей" required min="1">
-    <input type="date" id="checkin" placeholder="Дата заезда" required>
-    <input type="date" id="checkout" placeholder="Дата выезда" required>
-    <select id="room_type" required>
-      <option value="">Выберите тип номера</option>
-      <option value="Стандарт">Стандарт</option>
-      <option value="Люкс">Люкс</option>
+    <label>ФИО</label>
+    <input type="text" id="full_name" required>
+
+    <label>Телефон</label>
+    <input type="tel" id="phone" required>
+
+    <label>Email</label>
+    <input type="email" id="email" required>
+
+    <label>Количество гостей</label>
+    <input type="number" id="guests" min="1" max="6" required>
+
+    <label>Дата заезда</label>
+    <input type="date" id="checkin" required>
+
+    <label>Дата выезда</label>
+    <input type="date" id="checkout" required>
+
+    <label>Номер</label>
+    <select id="room" disabled>
+      <option>Сначала выберите даты</option>
     </select>
-    <textarea id="comments" placeholder="Дополнительные пожелания"></textarea>
-    <button type="submit">Забронировать</button>
+
+    <div id="total_price"></div>
+
+    <label>Пожелания</label>
+    <textarea id="comments"></textarea>
+
+    <div>
+      <input type="checkbox" id="agree" required>
+      <label for="agree">Я согласен с условиями проживания</label>
+    </div>
+
+    <button type="submit" id="submitBtn" disabled>Забронировать</button>
+    <button type="button" id="manageBtn">Управление бронированием</button>
   </form>
 
-  <button id="manageBtn">Управление бронированием</button>
-
-  <div id="manageForm" style="display: none;">
-    <h3>Управление бронированием</h3>
-    <input type="text" id="manage_id" placeholder="Введите ID бронирования (например: N-1234)">
-    <button onclick="searchBooking()">Найти</button>
+  <!-- Форма управления бронированием -->
+  <div id="manageForm">
+    <label>ID бронирования (например: N-12345678)</label>
+    <input type="text" id="searchID">
+    <button type="button" id="searchBtn">Найти</button>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <!-- Кнопка возврата -->
+  <button id="newBookingBtn" style="display:none;">Новое бронирование</button>
+</div>
 
-  <script>
-    const API = 'https://script.google.com/macros/s/ВАШ_ID_СКРИПТА/exec'; // Замените на ваш URL
+<!-- Контейнер для тостов -->
+<div id="toastContainer"></div>
 
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+<script>
+const API = 'ВАШ_АДРЕС_АПИ'; // Замените на ваш Apps Script URL
+
+function generateBookingID() {
+  return 'N-' + Math.floor(Math.random() * 90000000 + 10000000);
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerText = msg;
+  document.getElementById('toastContainer').appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const bookingForm = document.getElementById('bookingForm');
+  const manageForm = document.getElementById('manageForm');
+  const newBookingBtn = document.getElementById('newBookingBtn');
+
+  // Управление формами
+  document.getElementById('manageBtn').addEventListener('click', () => {
+    bookingForm.style.display = 'none';
+    manageForm.style.display = 'block';
+    newBookingBtn.style.display = 'block';
+  });
+
+  newBookingBtn.addEventListener('click', () => {
+    manageForm.style.display = 'none';
+    bookingForm.style.display = 'block';
+    newBookingBtn.style.display = 'none';
+  });
+
+  // Отправка формы бронирования
+  bookingForm.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!document.getElementById('agree').checked) {
+      showToast('Вы должны согласиться с условиями!');
+      return;
     }
 
-    function generateBookingID() {
-      const randomNumber = Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000;
-      return `N-${randomNumber}`;
+    const bookingID = generateBookingID();
+    const data = {
+      booking_id: bookingID,
+      full_name: document.getElementById('full_name').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      guests: document.getElementById('guests').value,
+      checkin: document.getElementById('checkin').value,
+      checkout: document.getElementById('checkout').value,
+      room_id: document.getElementById('room').value,
+      comments: document.getElementById('comments').value,
+      total_price: 1000 // Заглушка
+    };
+
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      mode: 'cors'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.result === 'success') {
+        alert(`Бронирование успешно! Ваш ID: ${bookingID}`);
+        bookingForm.reset();
+        document.getElementById('submitBtn').disabled = true;
+      } else {
+        showToast('Ошибка бронирования!');
+      }
+    })
+    .catch(() => showToast('Ошибка соединения'));
+  });
+
+  // Поиск бронирования
+  document.getElementById('searchBtn').addEventListener('click', () => {
+    const id = document.getElementById('searchID').value.trim();
+    if (!id.startsWith('N-')) {
+      showToast('Неверный формат ID');
+      return;
     }
 
-    document.getElementById('bookingForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const booking_id = generateBookingID();
-      const data = {
-        action: 'book',
-        booking_id,
-        full_name: document.getElementById('full_name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        guests: document.getElementById('guests').value,
-        checkin: document.getElementById('checkin').value,
-        checkout: document.getElementById('checkout').value,
-        room_type: document.getElementById('room_type').value,
-        comments: document.getElementById('comments').value
-      };
-
-      fetch(API, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.result === 'success') {
-          showToast('Бронирование успешно создано: ' + booking_id);
-          document.getElementById('bookingForm').reset();
+    fetch(`${API}?action=search&id=${encodeURIComponent(id)}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.result === 'success' && res.booking) {
+          const b = res.booking;
+          const win = window.open('', '', 'width=600,height=500');
+          win.document.write(`
+            <h2>Бронирование ${b.booking_id}</h2>
+            <p><strong>Имя:</strong> ${b.full_name}</p>
+            <p><strong>Телефон:</strong> ${b.phone}</p>
+            <p><strong>Дата:</strong> ${b.checkin} – ${b.checkout}</p>
+            <p><strong>Номер:</strong> ${b.room_id}</p>
+            <p><strong>Комментарий:</strong> ${b.comments}</p>
+            <button onclick="window.opener.cancelBooking('${b.booking_id}', window)">Отменить бронирование</button>
+            <button onclick="window.close()">Закрыть</button>
+          `);
         } else {
-          showToast('Ошибка при бронировании');
+          showToast('Бронирование не найдено');
         }
       });
-    });
+  });
+});
 
-    document.getElementById('manageBtn').addEventListener('click', () => {
-      document.getElementById('bookingForm').style.display = 'none';
-      document.getElementById('manageForm').style.display = 'block';
-    });
-
-    function searchBooking() {
-      const id = document.getElementById('manage_id').value.trim();
-      if (!id.startsWith('N-')) {
-        showToast('Введите корректный ID (например: N-1234)');
-        return;
+// Глобальная функция отмены бронирования
+function cancelBooking(id, win) {
+  fetch(`${API}?action=cancel&id=${encodeURIComponent(id)}`)
+    .then(r => r.json())
+    .then(res => {
+      if (res.result === 'success') {
+        alert('Бронирование успешно отменено!');
+        win.close();
+      } else {
+        showToast('Не удалось отменить');
       }
-
-      fetch(`${API}?action=getBooking&id=${encodeURIComponent(id)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || data.error) {
-            showToast('Бронирование не найдено');
-            return;
-          }
-
-          const win = window.open('', '', 'width=600,height=600');
-          win.document.write(`
-            <html><head><title>Детали бронирования</title></head>
-            <body style="font-family: sans-serif; padding: 20px;">
-              <h3>Детали бронирования</h3>
-              <p><strong>ID:</strong> ${data.booking_id}</p>
-              <p><strong>Имя:</strong> ${data.full_name}</p>
-              <p><strong>Email:</strong> ${data.email}</p>
-              <p><strong>Телефон:</strong> ${data.phone}</p>
-              <p><strong>Гости:</strong> ${data.guests}</p>
-              <p><strong>Даты:</strong> ${data.checkin} — ${data.checkout}</p>
-              <p><strong>Номер:</strong> ${data.room_type}</p>
-              <p><strong>Комментарий:</strong> ${data.comments || '-'}</p>
-              <button onclick="cancelBooking('${id}')">Отменить бронирование</button>
-              <button onclick="window.close()">Закрыть</button>
-              <script>
-                function cancelBooking(id) {
-                  fetch('${API}', {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'cancel', id }),
-                    headers: { 'Content-Type': 'application/json' }
-                  })
-                  .then(res => res.json())
-                  .then(r => {
-                    if (r.result === 'success') {
-                      alert('Бронирование успешно отменено');
-                      window.close();
-                    } else {
-                      alert('Не удалось отменить бронирование');
-                    }
-                  });
-                }
-              <\/script>
-            </body></html>
-          `);
-        });
-    }
-  </script>
-
+    });
+}
+</script>
 </body>
 </html>
