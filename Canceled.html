@@ -84,9 +84,7 @@
       id="cancelBookingID"
       placeholder="ИЛИ введите ID бронирования"
     >
-    <button onclick="checkBooking()">
-      Показать бронирования
-    </button>
+    <button onclick="checkBooking()">Показать бронирования</button>
   </div>
 
   <table id="resultsTable">
@@ -102,16 +100,11 @@
     <tbody id="resultsBody"></tbody>
   </table>
 
-  <button id="cancelButton" onclick="cancelSelected()">
-    Отменить выбранные
-  </button>
-
-  <div class="toast" id="toast">
-    Успешно отменено
-  </div>
+  <button id="cancelButton" onclick="cancelSelected()">Отменить выбранные</button>
+  <div class="toast" id="toast">Успешно отменено</div>
 
   <script>
-    // **ВАЖНО**: замените на ваш реальный URL
+    // **ВАЖНО**: замените на ваш реальный URL веб-приложения
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
 
     function showToast(msg) {
@@ -124,6 +117,7 @@
     }
 
     function checkBooking() {
+      console.log('checkBooking called');
       const phone = document.getElementById('cancelPhone').value.trim();
       const id    = document.getElementById('cancelBookingID').value.trim();
 
@@ -141,19 +135,21 @@
         src += `&phone=${encodeURIComponent(phone)}`;
       }
 
+      console.log('Inserting JSONP <script> with src =', src);
       const s = document.createElement('script');
       s.src = src;
       document.body.appendChild(s);
     }
 
     function handleJSONPResponse(data) {
+      console.log('handleJSONPResponse data =', data);
       const table = document.getElementById('resultsTable');
       const body  = document.getElementById('resultsBody');
       const btn   = document.getElementById('cancelButton');
 
-      body.innerHTML    = '';
-      table.style.display  = 'none';
-      btn.style.display    = 'none';
+      body.innerHTML        = '';
+      table.style.display   = 'none';
+      btn.style.display     = 'none';
 
       const list = data.bookings || [];
       if (!list.length) {
@@ -178,6 +174,7 @@
     }
 
     function cancelSelected() {
+      console.log('cancelSelected called');
       const checks = Array.from(document.querySelectorAll('#resultsBody input:checked'));
       if (!checks.length) {
         alert('Выберите хотя бы одно');
@@ -187,15 +184,19 @@
       const ids = checks.map(ch => ch.value);
       window.handleCancelResponse = handleCancelResponse;
 
+      const src = `${SCRIPT_URL}` +
+                  `?action=cancel` +
+                  `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}` +
+                  `&callback=handleCancelResponse`;
+
+      console.log('Inserting JSONP <script> for cancel with src =', src);
       const s = document.createElement('script');
-      s.src = `${SCRIPT_URL}`
-            + `?action=cancel`
-            + `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}`
-            + `&callback=handleCancelResponse`;
+      s.src = src;
       document.body.appendChild(s);
     }
 
     function handleCancelResponse(data) {
+      console.log('handleCancelResponse data =', data);
       if (data.success) {
         showToast(`Отменено: ${data.deleted.length}`);
         checkBooking();
