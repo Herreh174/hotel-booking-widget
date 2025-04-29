@@ -113,7 +113,7 @@
 
     function checkBooking() {
       console.log('checkBooking called');
-      const phone = document.getElementById('cancelPhone').value.trim();
+      let phone = document.getElementById('cancelPhone').value.trim();
       const id = document.getElementById('cancelBookingID').value.trim();
 
       if (!phone && !id) {
@@ -121,17 +121,20 @@
         return;
       }
 
-      // Убедимся, что телефон всегда строка
-      if (typeof phone !== 'string') {
-        console.log("Phone is not a string, converting");
-        phone = String(phone);  // Преобразуем в строку, если это не строка
-      }
+      // Убедимся, что телефон всегда строка и очищен от нецифровых символов
+      phone = normalizePhone(phone);
 
       window.handleJSONPResponse = handleJSONPResponse;
 
       let src = `${SCRIPT_URL}?type=check&callback=handleJSONPResponse`;
       if (id) {
-        src += `&booking_id=${encodeURIComponent(id)}`;
+        // Обработка ID как числа
+        const bookingId = Number(id);
+        if (isNaN(bookingId)) {
+          alert('ID бронирования должен быть числом');
+          return;
+        }
+        src += `&booking_id=${encodeURIComponent(bookingId)}`;
       } else {
         src += `&phone=${encodeURIComponent(phone)}`;
       }
@@ -140,6 +143,10 @@
       const s = document.createElement('script');
       s.src = src;
       document.body.appendChild(s);
+    }
+
+    function normalizePhone(phone) {
+      return phone.replace(/\D/g, ''); // Удаляем все нецифровые символы
     }
 
     function handleJSONPResponse(data) {
