@@ -10,13 +10,11 @@
       align-items: center;
       padding: 40px 20px;
     }
-
     #bookingForm {
       width: 100%;
       max-width: 500px;
       animation: fadeIn 1s ease forwards;
     }
-
     #bookingForm input {
       display: block;
       margin-bottom: 10px;
@@ -25,7 +23,6 @@
       border-radius: 8px;
       border: 1px solid #ccc;
     }
-
     #bookingForm button {
       display: block;
       margin: 0 auto;
@@ -36,7 +33,6 @@
       cursor: pointer;
       font-weight: bold;
     }
-
     #resultsTable {
       width: 100%;
       max-width: 800px;
@@ -44,17 +40,14 @@
       border-collapse: collapse;
       display: none;
     }
-
     #resultsTable th, #resultsTable td {
       border: 1px solid #ccc;
       padding: 10px;
       text-align: left;
     }
-
     #resultsTable th {
       background-color: #f9f9f9;
     }
-
     .toast {
       position: fixed;
       top: 20px;
@@ -97,7 +90,7 @@
   <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec"; // замените на ваш
+    const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // замените на ваш
 
     function showToast(message) {
       const toast = document.getElementById('toast');
@@ -113,11 +106,18 @@
         alert('Введите номер телефона или ID бронирования');
         return;
       }
+      const cb = 'handleJSONPResponse';
+      window[cb] = handleJSONPResponse;  // гарантируем глобальную функцию
 
-      const callbackName = 'handleJSONPResponse';
+      let src = `${SCRIPT_URL}?type=check&callback=${cb}`;
+      if (bookingID) {
+        src += `&booking_id=${encodeURIComponent(bookingID)}`;
+      } else {
+        src += `&phone=${encodeURIComponent(phone)}`;
+      }
+
       const script = document.createElement('script');
-      script.src = `${SCRIPT_URL}?callback=${callbackName}` +
-        (bookingID ? `&booking_id=${encodeURIComponent(bookingID)}` : `&phone=${encodeURIComponent(phone)}`);
+      script.src = src;
       document.body.appendChild(script);
     }
 
@@ -130,10 +130,9 @@
       table.style.display = 'none';
       cancelBtn.style.display = 'none';
 
-      const bookings = data.bookings || (data.booking ? [data.booking] : []);
-
+      const bookings = data.bookings || [];
       if (bookings.length === 0) {
-        alert('Бронирования не найдены');
+        alert(data.error || 'Бронирования не найдены');
         return;
       }
 
@@ -154,23 +153,32 @@
     }
 
     function cancelSelected() {
-      const checked = [...document.querySelectorAll('#resultsBody input[type="checkbox"]:checked')];
-      if (checked.length === 0) return alert('Выберите хотя бы одно бронирование');
+      const checked = [...document.querySelectorAll('#resultsBody input:checked')];
+      if (checked.length === 0) {
+        alert('Выберите хотя бы одно бронирование');
+        return;
+      }
 
       const bookingIDs = checked.map(cb => cb.value);
-      const callbackName = 'handleCancelResponse';
+      const cb = 'handleCancelResponse';
+      window[cb] = handleCancelResponse;
+
+      const src = `${SCRIPT_URL}`
+        + `?action=cancel`
+        + `&booking_ids=${encodeURIComponent(JSON.stringify(bookingIDs))}`
+        + `&callback=${cb}`;
+
       const script = document.createElement('script');
-      const idsEncoded = encodeURIComponent(JSON.stringify(bookingIDs));
-      script.src = `${SCRIPT_URL}?booking_ids=${idsEncoded}&action=cancel&callback=${callbackName}`;
+      script.src = src;
       document.body.appendChild(script);
     }
 
     function handleCancelResponse(data) {
-      if (data && data.success) {
+      if (data.success) {
         showToast(`Отменено: ${data.deleted.length}`);
-        checkBooking(); // Обновляем список
+        checkBooking(); // обновляем список после отмены
       } else {
-        alert('Ошибка отмены');
+        alert(data.error || 'Ошибка отмены');
       }
     }
   </script>
