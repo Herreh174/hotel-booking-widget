@@ -122,7 +122,7 @@
       <h3>Отмена бронирования</h3>
       <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
       <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
-      <button onclick="checkBooking()">Отправить запрос</button>
+      <button id="submitButton">Отправить запрос</button>
     </div>
   </div>
 
@@ -139,7 +139,7 @@
   <!-- Toast сообщение -->
   <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
-  <!-- Перемещение скрипта в конец -->
+  <!-- Скрипт -->
   <script>
     let selectedBooking = null;
 
@@ -150,6 +150,7 @@
       setTimeout(() => toast.style.display = 'none', 3000);
     }
 
+    // Функция для проверки бронирования
     function checkBooking() {
       const phone = document.getElementById('cancelPhone').value.trim();
       const bookingID = document.getElementById('cancelBookingID').value.trim();
@@ -208,6 +209,9 @@
       })
       .catch(() => alert('Ошибка запроса'));
     }
+
+    // Привязка обработчика событий к кнопке
+    document.getElementById('submitButton').addEventListener('click', checkBooking);
   </script>
 
 </body>
