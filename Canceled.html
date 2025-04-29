@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
   <meta charset="UTF-8">
   <title>Отмена бронирования</title>
@@ -46,8 +45,7 @@
       display: none;
     }
 
-    #resultsTable th,
-    #resultsTable td {
+    #resultsTable th, #resultsTable td {
       border: 1px solid #ccc;
       padding: 10px;
       text-align: left;
@@ -65,148 +63,117 @@
       color: #333;
       padding: 12px 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
       z-index: 9999;
-      display: none;
     }
   </style>
 </head>
-
 <body>
 
-  <div class="form-container" id="bookingForm">
-    <h3>Отмена бронирования</h3>
-    <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
-    <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
-    <button onclick="checkBooking()">Показать бронирования</button>
+  <div class="form-container">
+    <div id="bookingForm">
+      <h3>Отмена бронирования</h3>
+      <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
+      <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
+      <button onclick="checkBooking()">Показать бронирования</button>
+    </div>
+
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>ID</th>
+          <th>Даты</th>
+          <th>Объект</th>
+          <th>Сумма</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+
+    <button id="cancelButton" onclick="cancelSelected()" style="display:none;">Отменить выбранные</button>
   </div>
 
-  <table id="resultsTable">
-    <thead>
-      <tr>
-        <th></th>
-        <th>ID</th>
-        <th>Даты</th>
-        <th>Объект</th>
-        <th>Сумма</th>
-      </tr>
-    </thead>
-    <tbody id="resultsBody"></tbody>
-  </table>
-
-  <button id="cancelButton" onclick="cancelSelected()" style="display:none;">Отменить выбранные</button>
-
-  <div class="toast" id="toast">Успешно отменено</div>
+  <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec"; // замените на ваш
 
-    function showToast(msg) {
+    function showToast(message) {
       const toast = document.getElementById('toast');
-      toast.innerText = msg;
+      toast.innerText = message;
       toast.style.display = 'block';
       setTimeout(() => toast.style.display = 'none', 3000);
     }
 
-    function normalizePhone(phone) {
-      return phone.replace(/\D/g, '');
-    }
-
     function checkBooking() {
-      let phone = document.getElementById('cancelPhone').value.trim();
-      const id = document.getElementById('cancelBookingID').value.trim();
-
-      if (!phone && !id) {
-        alert('Введите телефон или ID');
+      const phone = document.getElementById('cancelPhone').value.trim();
+      const bookingID = document.getElementById('cancelBookingID').value.trim();
+      if (!phone && !bookingID) {
+        alert('Введите номер телефона или ID бронирования');
         return;
       }
 
-      phone = normalizePhone(phone);
-      window.handleJSONPResponse = handleJSONPResponse;
-
-      let src = `${SCRIPT_URL}?type=check&callback=handleJSONPResponse`;
-      if (id) {
-        const bookingId = Number(id);
-        if (isNaN(bookingId)) {
-          alert('ID бронирования должен быть числом');
-          return;
-        }
-        src += `&booking_id=${encodeURIComponent(bookingId)}`;
-      } else {
-        src += `&phone=${encodeURIComponent(phone)}`;
-      }
-
-      const oldScript = document.getElementById("jsonpScript");
-      if (oldScript) oldScript.remove();
-
+      const callbackName = 'handleJSONPResponse';
       const script = document.createElement('script');
-      script.src = src;
-      script.id = "jsonpScript";
+      script.src = `${SCRIPT_URL}?callback=${callbackName}` +
+        (bookingID ? `&booking_id=${encodeURIComponent(bookingID)}` : `&phone=${encodeURIComponent(phone)}`);
       document.body.appendChild(script);
     }
 
     function handleJSONPResponse(data) {
       const table = document.getElementById('resultsTable');
       const body = document.getElementById('resultsBody');
-      const btn = document.getElementById('cancelButton');
+      const cancelBtn = document.getElementById('cancelButton');
 
       body.innerHTML = '';
       table.style.display = 'none';
-      btn.style.display = 'none';
+      cancelBtn.style.display = 'none';
 
-      const list = data.bookings || [];
-      if (!list.length) {
-        alert(data.error || 'Не найдено');
+      const bookings = data.bookings || (data.booking ? [data.booking] : []);
+
+      if (bookings.length === 0) {
+        alert('Бронирования не найдены');
         return;
       }
 
-      list.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+      bookings.forEach(b => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
           <td><input type="checkbox" value="${b.booking_id}"></td>
           <td>${b.booking_id}</td>
           <td>${b.checkin} — ${b.checkout}</td>
-          <td>${b.room || b.accommodation || ''}</td>
-          <td>${b.total || b.price || 0}₽</td>
+          <td>${b.room}</td>
+          <td>${b.total}₽</td>
         `;
-        body.appendChild(tr);
+        body.appendChild(row);
       });
 
       table.style.display = 'table';
-      btn.style.display = 'inline-block';
+      cancelBtn.style.display = 'inline-block';
     }
 
     function cancelSelected() {
-      const checks = Array.from(document.querySelectorAll('#resultsBody input:checked'));
-      if (!checks.length) {
-        alert('Выберите хотя бы одно бронирование');
-        return;
-      }
+      const checked = [...document.querySelectorAll('#resultsBody input[type="checkbox"]:checked')];
+      if (checked.length === 0) return alert('Выберите хотя бы одно бронирование');
 
-      const ids = checks.map(ch => ch.value);
-      window.handleCancelResponse = handleCancelResponse;
-
-      const src = `${SCRIPT_URL}?action=cancel&booking_ids=${encodeURIComponent(JSON.stringify(ids))}&callback=handleCancelResponse`;
-
-      const oldScript = document.getElementById("jsonpScript");
-      if (oldScript) oldScript.remove();
-
+      const bookingIDs = checked.map(cb => cb.value);
+      const callbackName = 'handleCancelResponse';
       const script = document.createElement('script');
-      script.src = src;
-      script.id = "jsonpScript";
+      const idsEncoded = encodeURIComponent(JSON.stringify(bookingIDs));
+      script.src = `${SCRIPT_URL}?booking_ids=${idsEncoded}&action=cancel&callback=${callbackName}`;
       document.body.appendChild(script);
     }
 
     function handleCancelResponse(data) {
-      if (data.success) {
+      if (data && data.success) {
         showToast(`Отменено: ${data.deleted.length}`);
-        checkBooking();
+        checkBooking(); // Обновляем список
       } else {
-        alert(data.error || 'Ошибка при отмене');
+        alert('Ошибка отмены');
       }
     }
   </script>
 
 </body>
-
 </html>
