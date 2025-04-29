@@ -143,8 +143,8 @@
           <td><input type="checkbox" value="${b.booking_id}"></td>
           <td>${b.booking_id}</td>
           <td>${b.checkin} — ${b.checkout}</td>
-          <td>${b.room_name || 'Не указано'}</td>
-          <td>${b.total_price || 'Не указано'}₽</td>
+          <td>${b.room}</td>
+          <td>${b.total}₽</td>
         `;
         body.appendChild(row);
       });
