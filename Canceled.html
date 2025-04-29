@@ -38,51 +38,76 @@
 <!-- Toast сообщение -->
 <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
+<div id="bookingForm">
+  <h3>Отмена бронирования</h3>
+  <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
+  <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
+  <button onclick="checkBooking()">Отправить запрос</button>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal" id="confirmModal">
+  <div class="modal-content">
+    <div class="modal-icon">⚠️</div>
+    <div id="modalText">Загрузка...</div>
+    <button class="modal-button" onclick="confirmCancel()">Да, отменить</button>
+    <button class="modal-button" onclick="closeModal()">Нет</button>
+  </div>
+</div>
+
+<!-- Toast сообщение -->
+<div class="toast" id="toast" style="display:none;">Успешно отменено</div>
+
 <style>
-  body, html {
+  body {
     margin: 0;
     padding: 0;
     font-family: sans-serif;
+    background: #f9f9f9;
   }
 
   #bookingForm {
-    max-width: 500px;
-    width: 90%;
-    margin: 40px auto;
-    padding: 30px;
+    width: 500px;
+    margin: 60px auto;
     background: #fff;
+    padding: 30px;
     border-radius: 16px;
     box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    text-align: center;
     animation: fadeIn 1s ease forwards;
   }
 
   #bookingForm h3 {
     margin-bottom: 20px;
-    text-align: center;
   }
 
   #bookingForm input {
-    display: block;
-    margin-bottom: 15px;
     width: 100%;
     padding: 14px;
     font-size: 16px;
     border-radius: 8px;
     border: 1px solid #ccc;
+    margin-bottom: 15px;
     box-sizing: border-box;
   }
 
   #bookingForm button {
-    width: 100%;
-    padding: 14px;
+    padding: 14px 24px;
     background: #FFD700;
     border: none;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: bold;
     font-size: 16px;
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 10px;
   }
 
+  #bookingForm button:hover {
+    background: #e6c200;
+  }
+
+  /* Toast */
   .toast {
     position: fixed;
     top: 20px;
@@ -97,6 +122,7 @@
     z-index: 9999;
   }
 
+  /* Modal */
   .modal {
     display: none;
     position: fixed;
@@ -114,8 +140,8 @@
     padding: 30px 20px;
     border-radius: 16px;
     text-align: center;
-    max-width: 90%;
-    width: 400px;
+    width: 90%;
+    max-width: 400px;
     transform: scale(0.8);
     opacity: 0;
     animation: zoomIn 0.4s forwards;
@@ -141,14 +167,11 @@
     transition: background 0.3s;
   }
 
-  .modal-button:not(:last-child) {
-    margin-bottom: 10px;
-  }
-
   .modal-button:hover {
     background: #e6c200;
   }
 
+  /* Animations */
   @keyframes fadeIn {
     from {opacity:0; transform: translateY(20px);}
     to   {opacity:1; transform: translateY(0);}
@@ -162,6 +185,18 @@
   @keyframes slideDown {
     from {opacity:0; transform: translateY(-20px);}
     to   {opacity:1; transform: translateY(0);}
+  }
+
+  /* Убираем масштабирование на мобилках */
+  @media (max-width: 520px) {
+    body {
+      overflow-x: hidden;
+    }
+    #bookingForm {
+      width: 500px;
+      transform: scale(0.9);
+      transform-origin: top center;
+    }
   }
 </style>
 
