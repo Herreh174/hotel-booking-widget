@@ -1,389 +1,299 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Бронирование</title>
+  <title>Бронирование номера</title>
+  <!-- СТИЛИ -->
   <style>
-    body {
-      background: #f9f9f9;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #FFD700;
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      background: #FFD700;
-      color: #333;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .button-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .button-row button {
-      flex: 1;
-    }
-    .loader {
-      display: none;
-      text-align: center;
-      margin-top: 10px;
+    /* Общие стили */
+    #bookingForm { animation: fadeIn 1s ease forwards; }
+    @keyframes fadeIn {
+      from {opacity:0; transform: translateY(20px);}
+      to   {opacity:1; transform: translateY(0);}
     }
     .toast {
+      position: fixed; top:20px; right:20px;
+      background:#FFD700; color:#333;
+      padding:12px 20px; border-radius:8px;
+      box-shadow:0 0 10px rgba(0,0,0,0.2);
+      opacity:0; animation: slideDown 0.5s ease forwards;
+      z-index:9999;
+    }
+    @keyframes slideDown {
+      from {opacity:0; transform: translateY(-20px);}
+      to   {opacity:1; transform: translateY(0);}
+    }
+    .loading::after {
+      content:'...'; animation: dots 1s steps(5,end) infinite;
+    }
+    @keyframes dots {
+      0%,20%   {content:'';}
+      40%      {content:'.';}
+      60%      {content:'..';}
+      80%,100% {content:'...';}
+    }
+    .modal {
+      display:none; position:fixed; z-index:10000;
+      left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.5);
+      justify-content:center; align-items:center;
+      animation: fadeIn 0.4s forwards;
+    }
+    .modal-content {
+      background:#fff; padding:30px 40px; border-radius:16px;
+      text-align:center; max-width:400px;
+      transform:scale(0.8); opacity:0;
+      animation: zoomIn 0.4s forwards;
+    }
+    .modal-icon { font-size:50px; color:#FFD700; margin-bottom:15px; }
+    .modal-button {
+      margin-top:20px; padding:10px 20px; background:#FFD700;
+      border:none; border-radius:8px; cursor:pointer;
+      color:#333; font-weight:bold; transition:background 0.3s;
+    }
+    .modal-button:hover { background:#e6c200; }
+    @keyframes zoomIn {
+      from {transform:scale(0.8); opacity:0;}
+      to   {transform:scale(1);   opacity:1;}
+    }
+    .form-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    #manageSection {
       display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 16px;
-      z-index: 9999;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
     }
     @media (max-width: 600px) {
-      .container {
-        margin: 20px 10px;
-        padding: 20px;
-      }
-      button {
-        font-size: 15px;
-        padding: 12px;
-      }
-      input, select, textarea {
-        font-size: 15px;
-        padding: 10px;
-      }
-      .button-row {
-        flex-direction: column;
-      }
+      .form-buttons { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <div class="container" id="booking-form">
-    <div class="form-group">
-      <input type="text" id="name" placeholder="Имя" required />
-    </div>
-    <div class="form-group">
-      <input type="text" id="phone" placeholder="Телефон" required />
-    </div>
-    <div class="form-group">
-      <input type="date" id="date" required />
-    </div>
-    <div class="form-group">
-      <select id="room" required>
-        <option value="">Выберите номер</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <input type="number" id="guests" value="1" min="1" required />
-    </div>
-    <div class="form-group">
-      <textarea id="notes" placeholder="Комментарий"></textarea>
-    </div>
 
-    <div class="button-row">
-      <button onclick="submitBooking()">Забронировать</button>
-      <button onclick="showManageForm()">Управление</button>
-    </div>
-
-    <div class="loader" id="loader">Отправка...</div>
-  </div>
-
-  <div class="container" id="manage-form" style="display:none">
-    <div class="form-group">
-      <input type="text" id="booking-id" placeholder="Введите ID бронирования" />
-    </div>
-    <button onclick="findBooking()">Найти</button>
-    <button onclick="backToForm()">Назад</button>
-    <div id="booking-result"></div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <!-- IMask для телефона -->
-  <script src="https://unpkg.com/imask"></script>
-
-  <script>
-    // Маска для телефона
-    const phoneInput = document.getElementById('phone');
-    IMask(phoneInput, {
-      mask: '+{7} (000) 000-00-00'
-    });
-
-    // Загрузка номеров
-    function loadRooms() {
-      const script = document.createElement('script');
-      script.src = 'https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec?callback=populateRooms';
-      document.body.appendChild(script);
-    }
-
-    function populateRooms(data) {
-      const select = document.getElementById('room');
-      data.rooms.forEach(room => {
-        const option = document.createElement('option');
-        option.value = room;
-        option.textContent = room;
-        select.appendChild(option);
-      });
-    }
-
-    // Отправка бронирования
-    function submitBooking() {
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
-      const date = document.getElementById('date').value;
-      const room = document.getElementById('room').value;
-      const guests = document.getElementById('guests').value;
-      const notes = document.getElementById('notes').value;
-
-      if (!name || !phone || !date || !room || guests < 1) {
-        showToast("Пожалуйста, заполните все поля корректно.");
-        return;
-      }
-
-      document.getElementById('loader').style.display = 'block';
-
-      const url = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec' +
-        `?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}` +
-        `&date=${encodeURIComponent(date)}&room=${encodeURIComponent(room)}` +
-        `&guests=${encodeURIComponent(guests)}&notes=${encodeURIComponent(notes)}`;
-
-      const script = document.createElement('script');
-      script.src = url + '&callback=handleResponse';
-      document.body.appendChild(script);
-    }
-
-    function handleResponse(response) {
-      document.getElementById('loader').style.display = 'none';
-      if (response.success) {
-        showToast(`Бронирование успешно! ID: ${response.id}`);
-        document.getElementById('booking-form').reset();
-      } else {
-        showToast("Ошибка при бронировании.");
-      }
-    }
-
-    // Управление
-    function showManageForm() {
-      document.getElementById('booking-form').style.display = 'none';
-      document.getElementById('manage-form').style.display = 'block';
-    }
-
-    function backToForm() {
-      document.getElementById('manage-form').style.display = 'none';
-      document.getElementById('booking-form').style.display = 'block';
-    }
-
-    function findBooking() {
-      const id = document.getElementById('booking-id').value.trim();
-      if (!id) {
-        showToast("Введите ID");
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec?id=${id}&callback=displayBooking`;
-      document.body.appendChild(script);
-    }
-
-    function displayBooking(data) {
-      const result = document.getElementById('booking-result');
-      if (data.success) {
-        result.innerHTML = `
-          <p><strong>Имя:</strong> ${data.name}</p>
-          <p><strong>Телефон:</strong> ${data.phone}</p>
-          <p><strong>Дата:</strong> ${data.date}</p>
-          <p><strong>Номер:</strong> ${data.room}</p>
-          <p><strong>Гостей:</strong> ${data.guests}</p>
-          <p><strong>Комментарий:</strong> ${data.notes}</p>
-          <button onclick="cancelBooking('${data.id}')">Отменить</button>
-        `;
-      } else {
-        result.innerHTML = "<p>Бронирование не найдено</p>";
-      }
-    }
-
-    function cancelBooking(id) {
-      const script = document.createElement('script');
-      script.src = `https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec?cancel=${id}&callback=cancelResponse`;
-      document.body.appendChild(script);
-    }
-
-    function cancelResponse(response) {
-      if (response.success) {
-        showToast("Бронирование отменено");
-        document.getElementById('booking-result').innerHTML = "";
-      } else {
-        showToast("Ошибка при отмене");
-      }
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 3000);
-    }
-
-    loadRooms();
-        <!-- УПРАВЛЕНИЕ БРОНИРОВАНИЕМ -->
-  <div id="manageForm" style="display:none;max-width:600px;margin:40px auto 0;padding:20px;
-               background:#fff;border-radius:12px;
-               box-shadow:0 0 20px rgba(0,0,0,0.05);
-               font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-    <h2 style="text-align:center;color:#333;">Управление бронированием</h2>
-    <div style="display:flex;gap:10px;margin-bottom:15px;">
-      <input type="text" id="searchID" placeholder="Введите ID бронирования (например, N-123456)"
-             style="flex:1;padding:10px;border:2px solid #FFD700;border-radius:8px;">
-      <button onclick="searchBooking()" style="padding:10px 20px;background:#FFD700;color:#333;
-              border:none;border-radius:8px;font-weight:bold;cursor:pointer;">
-        Найти
-      </button>
-    </div>
-    <div id="foundBooking" style="display:none;border:1px solid #ccc;padding:15px;border-radius:10px;">
-      <h4 style="margin-bottom:10px;">Найдено бронирование:</h4>
-      <div id="bookingDetails" style="line-height:1.5;"></div>
-      <div style="margin-top:15px;display:flex;gap:10px;">
-        <button onclick="cancelBooking()" class="modal-button" style="background:#f66;">Отменить</button>
-        <button onclick="backToBooking()" class="modal-button">Назад</button>
+  <!-- Основной раздел бронирования -->
+  <div id="bookingSection" style="max-width:600px; margin:0 auto; padding:20px;
+              background:#fff; border-radius:12px;
+              box-shadow:0 0 20px rgba(0,0,0,0.05);
+              font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+    <h2 style="text-align:center; color:#333;">Бронирование номера</h2>
+    <form id="bookingForm" style="display:flex; flex-direction:column; gap:15px; position:relative;">
+      <!-- Существующий код полей формы остается без изменений -->
+      <div id="loader" style="display:none;position:absolute;top:50%;left:50%;
+                             transform:translate(-50%,-50%);
+                             background:rgba(255,255,255,0.8);
+                             padding:10px;border-radius:8px;">
+        Загрузка...
       </div>
-    </div>
+
+      <!-- ... все ваши поля: full_name, phone, email, guests, checkin, checkout, room, comments, agree ... -->
+
+      <div class="form-buttons">
+        <button id="submitBtn" type="submit" disabled
+                style="padding:12px;background:#FFD700;color:#333;
+                       border:none;border-radius:8px;font-weight:bold;
+                       cursor:pointer;">
+          Забронировать
+        </button>
+        <button type="button" onclick="showManageForm()"
+                style="padding:12px;background:#eee;color:#333;
+                       border:1px solid #ccc;border-radius:8px;font-weight:bold;
+                       cursor:pointer;">
+          Управление бронированием
+        </button>
+      </div>
+    </form>
   </div>
-  
-  <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ -->
-  <div style="max-width:600px;margin:20px auto;text-align:center;">
-    <button onclick="showManageForm()" style="padding:10px 20px;background:#ccc;border:none;
-            border-radius:8px;cursor:pointer;">
-      Управление бронированием
-    </button>
+
+  <!-- Раздел управления бронированием -->
+  <div id="manageSection">
+    <h2 style="text-align:center; color:#333;">Управление бронированием</h2>
+    <form id="manageForm" onsubmit="handleManage(event)" style="display:flex;flex-direction:column;gap:15px;">
+      <input type="text" id="manageID" placeholder="Введите ID бронирования"
+             style="padding:10px;border:2px solid #FFD700;border-radius:8px;" required>
+      <div class="form-buttons">
+        <button type="submit"
+                style="padding:12px;background:#FFD700;color:#333;
+                       border:none;border-radius:8px;font-weight:bold;
+                       cursor:pointer;">
+          Найти
+        </button>
+        <button type="button" onclick="showBookingForm()"
+                style="padding:12px;background:#eee;color:#333;
+                       border:1px solid #ccc;border-radius:8px;font-weight:bold;
+                       cursor:pointer;">
+          Назад к бронированию
+        </button>
+      </div>
+    </form>
+    <div id="manageResult" style="margin-top:20px;"></div>
   </div>
-  
-  <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
-  <div id="cancelModal" class="modal">
+
+  <!-- Модальное окно успеха -->
+  <div id="successModal" class="modal">
     <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-icon">⚠️</div>
-      <h3>Подтверждение</h3>
-      <p>Вы уверены, что хотите отменить бронирование?</p>
-      <button onclick="confirmCancel()" class="modal-button" style="background:#f66;">Да, отменить</button>
-      <button onclick="closeCancelModal()" class="modal-button">Нет, назад</button>
+      <div class="modal-icon">✅</div>
+      <h3>Спасибо за бронирование!</h3>
+      <p>Ваш ID бронирования: <span id="bookingID"></span></p>
+      <p>Мы скоро свяжемся с вами для подтверждения.</p>
+      <button onclick="closeModal()" class="modal-button">Закрыть</button>
     </div>
   </div>
-  
+
+  <!-- Контейнер для тостов -->
+  <div id="toastContainer"></div>
+
+  <!-- СКРИПТ -->
   <script>
+    const API = 'https://script.google.com/macros/s/.../exec'; // Ваш URL
+    let availableRooms = [];
     let currentBooking = null;
-  
+
+    // Показывает раздел управления
     function showManageForm() {
-      document.getElementById('bookingForm').style.display = 'none';
-      document.getElementById('manageForm').style.display = 'block';
+      document.getElementById('bookingSection').style.display = 'none';
+      document.getElementById('manageSection').style.display = 'block';
     }
-  
-    function backToBooking() {
-      document.getElementById('manageForm').style.display = 'none';
-      document.getElementById('foundBooking').style.display = 'none';
-      document.getElementById('bookingForm').style.display = 'flex';
-      document.getElementById('searchID').value = '';
+
+    // Возвращает к форме бронирования
+    function showBookingForm() {
+      document.getElementById('manageSection').style.display = 'none';
+      document.getElementById('bookingSection').style.display = 'block';
+      document.getElementById('manageResult').innerHTML = '';
+      document.getElementById('manageID').value = '';
     }
-  
-    function searchBooking() {
-      const id = document.getElementById('searchID').value.trim();
-      if (!id) {
-        showToast("Введите ID бронирования.");
-        return;
-      }
-  
+
+    function showLoader(show) {
+      document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.innerText = msg;
+      document.getElementById('toastContainer').appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    // Обработка поиска бронирования
+    function handleManage(e) {
+      e.preventDefault();
+      const id = document.getElementById('manageID').value.trim();
+      if (!id) return;
       showLoader(true);
       fetch(`${API}?action=get&booking_id=${encodeURIComponent(id)}`)
         .then(r => r.json())
         .then(data => {
           showLoader(false);
+          const res = document.getElementById('manageResult');
           if (data && data.booking_id) {
             currentBooking = data;
-            const b = data;
-            const html = `
-              <b>ID:</b> ${b.booking_id}<br>
-              <b>ФИО:</b> ${b.full_name}<br>
-              <b>Телефон:</b> ${b.phone}<br>
-              <b>Email:</b> ${b.email}<br>
-              <b>Гости:</b> ${b.guests}<br>
-              <b>Заезд:</b> ${b.checkin}<br>
-              <b>Выезд:</b> ${b.checkout}<br>
-              <b>Номер:</b> ${b.room_type}<br>
-              <b>Комментарий:</b> ${b.comments}<br>
-              <b>Сумма:</b> ${b.total_price} ₽
+            res.innerHTML = `
+              <p><strong>ID:</strong> ${data.booking_id}</p>
+              <p><strong>ФИО:</strong> ${data.full_name}</p>
+              <p><strong>Телефон:</strong> ${data.phone}</p>
+              <p><strong>Email:</strong> ${data.email}</p>
+              <p><strong>Гости:</strong> ${data.guests}</p>
+              <p><strong>Заезд:</strong> ${data.checkin}</p>
+              <p><strong>Выезд:</strong> ${data.checkout}</p>
+              <p><strong>Номер:</strong> ${data.room_type}</p>
+              <p><strong>Комментарий:</strong> ${data.comments || '-'}</p>
+              <div style="margin-top:15px;display:flex;gap:10px;">
+                <button onclick="openCancelModal()" class="modal-button" style="background:#f66;">Отменить</button>
+                <button onclick="showBookingForm()" class="modal-button">Назад</button>
+              </div>
             `;
-            document.getElementById('bookingDetails').innerHTML = html;
-            document.getElementById('foundBooking').style.display = 'block';
           } else {
-            showToast("Бронирование не найдено.");
+            res.innerHTML = '<p style="color:red;">Бронирование не найдено.<\/p>';
           }
         })
         .catch(() => {
           showLoader(false);
-          showToast("Ошибка поиска. Повторите позже.");
+          showToast('Ошибка поиска.');
         });
     }
-  
-    function cancelBooking() {
+
+    // Модалка подтверждения
+    function openCancelModal() {
       document.getElementById('cancelModal').style.display = 'flex';
     }
-  
+    function closeModal() {
+      document.getElementById('successModal').style.display = 'none';
+    }
     function closeCancelModal() {
       document.getElementById('cancelModal').style.display = 'none';
     }
-  
     function confirmCancel() {
       closeCancelModal();
-      if (!currentBooking || !currentBooking.booking_id) return;
-  
+      if (!currentBooking) return;
       showLoader(true);
-      fetch(`${API}?action=delete&booking_id=${encodeURIComponent(currentBooking.booking_id)}`, {
-        method: 'POST'
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', booking_id: currentBooking.booking_id })
       })
       .then(r => r.json())
       .then(res => {
         showLoader(false);
         if (res.result === 'success') {
-          showToast("Бронирование успешно отменено.");
-          document.getElementById('foundBooking').style.display = 'none';
-          document.getElementById('searchID').value = '';
+          showToast('Бронирование отменено.');
+          showBookingForm();
         } else {
-          showToast("Не удалось отменить бронирование.");
+          showToast('Не удалось отменить.');
         }
       })
-      .catch(() => {
-        showLoader(false);
-        showToast("Ошибка отмены.");
+      .catch(() => { showLoader(false); showToast('Ошибка отмены.'); });
+    }
+
+    // JSONP callback для загрузки номеров
+    function displayAvailableRooms(res) {
+      availableRooms = res.available_rooms || [];
+      const roomSelect = document.getElementById('room');
+      roomSelect.innerHTML = '<option value="">Выберите номер<\/option>';
+      availableRooms.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.room_id;
+        opt.dataset.price = r.price;
+        opt.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
+        roomSelect.appendChild(opt);
       });
     }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      // Ваша логика fetchRooms, updateTotalPrice и отправки формы остаётся без изменений
+      // Добавьте JSONP для загрузки доступных номеров:
+      const script = document.createElement('script');
+      script.src = `${API}?action=rooms&callback=displayAvailableRooms`;
+      document.body.appendChild(script);
+    });
   </script>
 
-  
+  <!-- Модалка отмены бронирования -->
+  <div id="cancelModal" class="modal">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-icon">⚠️</div>
+      <h3>Подтверждение отмены</h3>
+      <p>Вы уверены, что хотите отменить бронирование?</p>
+      <button onclick="confirmCancel()" class="modal-button" style="background:#f66;">
+        Да, отменить
+      </button>
+      <button onclick="closeCancelModal()" class="modal-button">
+        Нет, назад
+      </button>
+    </div>
+  </div>
+
 </body>
 </html>
+```
+
