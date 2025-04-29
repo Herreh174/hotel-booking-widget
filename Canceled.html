@@ -6,7 +6,7 @@
   <style>
     .form-container {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       padding: 40px 20px;
     }
@@ -37,9 +37,22 @@
       font-weight: bold;
     }
 
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(20px);}
-      to   {opacity: 1; transform: translateY(0);}
+    #resultsTable {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 20px;
+      border-collapse: collapse;
+      display: none;
+    }
+
+    #resultsTable th, #resultsTable td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    #resultsTable th {
+      background-color: #f9f9f9;
     }
 
     .toast {
@@ -52,62 +65,6 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
       z-index: 9999;
-      animation: slideDown 0.5s ease forwards;
-    }
-
-    @keyframes slideDown {
-      from {opacity: 0; transform: translateY(-20px);}
-      to   {opacity: 1; transform: translateY(0);}
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 10000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-content {
-      background: #fff;
-      padding: 30px 40px;
-      border-radius: 16px;
-      text-align: center;
-      max-width: 400px;
-      transform: scale(0.8);
-      opacity: 0;
-      animation: zoomIn 0.4s forwards;
-    }
-
-    .modal-icon {
-      font-size: 50px;
-      color: #FFD700;
-      margin-bottom: 15px;
-    }
-
-    .modal-button {
-      margin-top: 10px;
-      margin-left: 10px;
-      padding: 10px 20px;
-      background: #FFD700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      color: #333;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-
-    .modal-button:hover {
-      background: #e6c200;
-    }
-
-    @keyframes zoomIn {
-      from {transform: scale(0.8); opacity: 0;}
-      to   {transform: scale(1);   opacity: 1;}
     }
   </style>
 </head>
@@ -118,24 +75,29 @@
       <h3>Отмена бронирования</h3>
       <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
       <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
-      <button onclick="checkBooking()">Отправить запрос</button>
+      <button onclick="checkBooking()">Показать бронирования</button>
     </div>
-  </div>
 
-  <div class="modal" id="confirmModal">
-    <div class="modal-content">
-      <div class="modal-icon">⚠️</div>
-      <div id="modalText">Загрузка...</div>
-      <button class="modal-button" onclick="confirmCancel()">Да, отменить</button>
-      <button class="modal-button" onclick="closeModal()">Нет</button>
-    </div>
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>ID</th>
+          <th>Даты</th>
+          <th>Объект</th>
+          <th>Сумма</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+
+    <button id="cancelButton" onclick="cancelSelected()" style="display:none;">Отменить выбранные</button>
   </div>
 
   <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
   <script>
-    let selectedBooking = null;
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // замените на ваш
 
     function showToast(message) {
       const toast = document.getElementById('toast');
@@ -147,7 +109,6 @@
     function checkBooking() {
       const phone = document.getElementById('cancelPhone').value.trim();
       const bookingID = document.getElementById('cancelBookingID').value.trim();
-
       if (!phone && !bookingID) {
         alert('Введите номер телефона или ID бронирования');
         return;
@@ -155,57 +116,62 @@
 
       const callbackName = 'handleJSONPResponse';
       const script = document.createElement('script');
-      const url = `${SCRIPT_URL}?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}&callback=${callbackName}`;
-      script.src = url;
+      script.src = `${SCRIPT_URL}?callback=${callbackName}` +
+        (bookingID ? `&booking_id=${encodeURIComponent(bookingID)}` : `&phone=${encodeURIComponent(phone)}`);
       document.body.appendChild(script);
     }
 
     function handleJSONPResponse(data) {
-      if (data && data.booking) {
-        selectedBooking = data.booking;
-        document.getElementById('modalText').innerHTML = `
-          <b>Имя:</b> ${data.booking.full_name}<br>
-          <b>Телефон:</b> ${data.booking.phone}<br>
-          <b>Даты:</b> ${data.booking.checkin} - ${data.booking.checkout}<br><br>
-          Вы уверены, что хотите отменить бронирование?
-        `;
-        openModal();
-      } else {
-        alert('Бронирование не найдено');
+      const table = document.getElementById('resultsTable');
+      const body = document.getElementById('resultsBody');
+      const cancelBtn = document.getElementById('cancelButton');
+
+      body.innerHTML = '';
+      table.style.display = 'none';
+      cancelBtn.style.display = 'none';
+
+      const bookings = data.bookings || (data.booking ? [data.booking] : []);
+
+      if (bookings.length === 0) {
+        alert('Бронирования не найдены');
+        return;
       }
+
+      bookings.forEach(b => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><input type="checkbox" value="${b.booking_id}"></td>
+          <td>${b.booking_id}</td>
+          <td>${b.checkin} — ${b.checkout}</td>
+          <td>${b.room}</td>
+          <td>${b.total}₽</td>
+        `;
+        body.appendChild(row);
+      });
+
+      table.style.display = 'table';
+      cancelBtn.style.display = 'inline-block';
     }
 
-    function openModal() {
-      document.getElementById('confirmModal').style.display = 'flex';
+    function cancelSelected() {
+      const checked = [...document.querySelectorAll('#resultsBody input[type="checkbox"]:checked')];
+      if (checked.length === 0) return alert('Выберите хотя бы одно бронирование');
+
+      const bookingIDs = checked.map(cb => cb.value);
+      const callbackName = 'handleCancelResponse';
+      const script = document.createElement('script');
+      const idsEncoded = encodeURIComponent(JSON.stringify(bookingIDs));
+      script.src = `${SCRIPT_URL}?booking_ids=${idsEncoded}&action=cancel&callback=${callbackName}`;
+      document.body.appendChild(script);
     }
 
-    function closeModal() {
-      document.getElementById('confirmModal').style.display = 'none';
-    }
-
-    function confirmCancel() {
-      if (!selectedBooking || !selectedBooking.booking_id) return;
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          action: 'cancel',
-          booking_id: selectedBooking.booking_id
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        closeModal();
-        if (data.status === 'success') {
-          showToast('Бронирование отменено');
-        } else {
-          alert('Ошибка отмены');
-        }
-      })
-      .catch(() => alert('Ошибка запроса'));
+    function handleCancelResponse(data) {
+      if (data && data.success) {
+        showToast(`Отменено: ${data.deleted.length}`);
+        checkBooking(); // Обновляем список
+      } else {
+        alert('Ошибка отмены');
+      }
     }
   </script>
 
