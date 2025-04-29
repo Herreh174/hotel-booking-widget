@@ -253,6 +253,137 @@
     }
 
     loadRooms();
+        <!-- УПРАВЛЕНИЕ БРОНИРОВАНИЕМ -->
+  <div id="manageForm" style="display:none;max-width:600px;margin:40px auto 0;padding:20px;
+               background:#fff;border-radius:12px;
+               box-shadow:0 0 20px rgba(0,0,0,0.05);
+               font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+    <h2 style="text-align:center;color:#333;">Управление бронированием</h2>
+    <div style="display:flex;gap:10px;margin-bottom:15px;">
+      <input type="text" id="searchID" placeholder="Введите ID бронирования (например, N-123456)"
+             style="flex:1;padding:10px;border:2px solid #FFD700;border-radius:8px;">
+      <button onclick="searchBooking()" style="padding:10px 20px;background:#FFD700;color:#333;
+              border:none;border-radius:8px;font-weight:bold;cursor:pointer;">
+        Найти
+      </button>
+    </div>
+    <div id="foundBooking" style="display:none;border:1px solid #ccc;padding:15px;border-radius:10px;">
+      <h4 style="margin-bottom:10px;">Найдено бронирование:</h4>
+      <div id="bookingDetails" style="line-height:1.5;"></div>
+      <div style="margin-top:15px;display:flex;gap:10px;">
+        <button onclick="cancelBooking()" class="modal-button" style="background:#f66;">Отменить</button>
+        <button onclick="backToBooking()" class="modal-button">Назад</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ -->
+  <div style="max-width:600px;margin:20px auto;text-align:center;">
+    <button onclick="showManageForm()" style="padding:10px 20px;background:#ccc;border:none;
+            border-radius:8px;cursor:pointer;">
+      Управление бронированием
+    </button>
+  </div>
+  
+  <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
+  <div id="cancelModal" class="modal">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-icon">⚠️</div>
+      <h3>Подтверждение</h3>
+      <p>Вы уверены, что хотите отменить бронирование?</p>
+      <button onclick="confirmCancel()" class="modal-button" style="background:#f66;">Да, отменить</button>
+      <button onclick="closeCancelModal()" class="modal-button">Нет, назад</button>
+    </div>
+  </div>
+  
+  <script>
+    let currentBooking = null;
+  
+    function showManageForm() {
+      document.getElementById('bookingForm').style.display = 'none';
+      document.getElementById('manageForm').style.display = 'block';
+    }
+  
+    function backToBooking() {
+      document.getElementById('manageForm').style.display = 'none';
+      document.getElementById('foundBooking').style.display = 'none';
+      document.getElementById('bookingForm').style.display = 'flex';
+      document.getElementById('searchID').value = '';
+    }
+  
+    function searchBooking() {
+      const id = document.getElementById('searchID').value.trim();
+      if (!id) {
+        showToast("Введите ID бронирования.");
+        return;
+      }
+  
+      showLoader(true);
+      fetch(`${API}?action=get&booking_id=${encodeURIComponent(id)}`)
+        .then(r => r.json())
+        .then(data => {
+          showLoader(false);
+          if (data && data.booking_id) {
+            currentBooking = data;
+            const b = data;
+            const html = `
+              <b>ID:</b> ${b.booking_id}<br>
+              <b>ФИО:</b> ${b.full_name}<br>
+              <b>Телефон:</b> ${b.phone}<br>
+              <b>Email:</b> ${b.email}<br>
+              <b>Гости:</b> ${b.guests}<br>
+              <b>Заезд:</b> ${b.checkin}<br>
+              <b>Выезд:</b> ${b.checkout}<br>
+              <b>Номер:</b> ${b.room_type}<br>
+              <b>Комментарий:</b> ${b.comments}<br>
+              <b>Сумма:</b> ${b.total_price} ₽
+            `;
+            document.getElementById('bookingDetails').innerHTML = html;
+            document.getElementById('foundBooking').style.display = 'block';
+          } else {
+            showToast("Бронирование не найдено.");
+          }
+        })
+        .catch(() => {
+          showLoader(false);
+          showToast("Ошибка поиска. Повторите позже.");
+        });
+    }
+  
+    function cancelBooking() {
+      document.getElementById('cancelModal').style.display = 'flex';
+    }
+  
+    function closeCancelModal() {
+      document.getElementById('cancelModal').style.display = 'none';
+    }
+  
+    function confirmCancel() {
+      closeCancelModal();
+      if (!currentBooking || !currentBooking.booking_id) return;
+  
+      showLoader(true);
+      fetch(`${API}?action=delete&booking_id=${encodeURIComponent(currentBooking.booking_id)}`, {
+        method: 'POST'
+      })
+      .then(r => r.json())
+      .then(res => {
+        showLoader(false);
+        if (res.result === 'success') {
+          showToast("Бронирование успешно отменено.");
+          document.getElementById('foundBooking').style.display = 'none';
+          document.getElementById('searchID').value = '';
+        } else {
+          showToast("Не удалось отменить бронирование.");
+        }
+      })
+      .catch(() => {
+        showLoader(false);
+        showToast("Ошибка отмены.");
+      });
+    }
   </script>
+
+  
 </body>
 </html>
