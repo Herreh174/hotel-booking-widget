@@ -2,9 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Отменить бронирование</title>
-
+  <title>Отмена бронирования</title>
   <style>
     .form-container {
       display: flex;
@@ -109,24 +107,22 @@
 
     @keyframes zoomIn {
       from {transform: scale(0.8); opacity: 0;}
-      to   {transform: scale(1); opacity: 1;}
+      to   {transform: scale(1);   opacity: 1;}
     }
   </style>
-
 </head>
 <body>
 
-  <!-- Форма отмены бронирования -->
   <div class="form-container">
     <div id="bookingForm">
       <h3>Отмена бронирования</h3>
       <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
       <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
-      <button id="submitButton">Отправить запрос</button>
+      <button onclick="checkBooking()">Отправить запрос</button>
     </div>
   </div>
 
-  <!-- Модальное окно подтверждения -->
+  <!-- Модальное окно -->
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <div class="modal-icon">⚠️</div>
@@ -139,7 +135,6 @@
   <!-- Toast сообщение -->
   <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
-  <!-- Скрипт -->
   <script>
     let selectedBooking = null;
 
@@ -150,7 +145,6 @@
       setTimeout(() => toast.style.display = 'none', 3000);
     }
 
-    // Функция для проверки бронирования
     function checkBooking() {
       const phone = document.getElementById('cancelPhone').value.trim();
       const bookingID = document.getElementById('cancelBookingID').value.trim();
@@ -160,10 +154,13 @@
         return;
       }
 
+      console.log('Отправка запроса с данными:', { phone, bookingID });
+
       // Отправляем GET-запрос в Google Apps Script для поиска брони
-      fetch('https://script.google.com/macros/s/AKfycbx1HGikEA4w81gcxNKVVmTHSYtn_WIS5VIigm3eY2LGR9cAt73hiW3kOIiz67tFcqX6/exec?type=check&phone=' + phone + '&booking_id=' + bookingID)
+      fetch(`https://script.google.com/macros/s/AKfycbx1HGikEA4w81gcxNKVVmTHSYtn_WIS5VIigm3eY2LGR9cAt73hiW3kOIiz67tFcqX6/exec?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}`)
         .then(res => res.json())
         .then(data => {
+          console.log('Ответ от сервера:', data);  // Логируем ответ от сервера
           if (data && data.booking) {
             selectedBooking = data.booking;
             document.getElementById('modalText').innerHTML = `
@@ -177,7 +174,10 @@
             alert('Бронирование не найдено');
           }
         })
-        .catch(() => alert('Ошибка запроса'));
+        .catch(error => {
+          console.error('Ошибка запроса:', error);  // Логируем ошибку
+          alert('Ошибка запроса');
+        });
     }
 
     function openModal() {
@@ -209,9 +209,6 @@
       })
       .catch(() => alert('Ошибка запроса'));
     }
-
-    // Привязка обработчика событий к кнопке
-    document.getElementById('submitButton').addEventListener('click', checkBooking);
   </script>
 
 </body>
