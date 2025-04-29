@@ -94,25 +94,25 @@
     <tbody id="resultsBody"></tbody>
   </table>
 
-  <button id="cancelButton" onclick="cancelSelected()">Отменить выбранные</button>
+  <button id="cancelButton" onclick="cancelSelected()" style="display:none;">Отменить выбранные</button>
 
   <div class="toast" id="toast">Успешно отменено</div>
 
   <script>
-    // **ВАЖНО**: замените на ваш реальный URL веб-приложения
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.innerText = msg;
       toast.style.display = 'block';
-      setTimeout(() => {
-        toast.style.display = 'none';
-      }, 3000);
+      setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    function normalizePhone(phone) {
+      return phone.replace(/\D/g, '');
     }
 
     function checkBooking() {
-      console.log('checkBooking called');
       let phone = document.getElementById('cancelPhone').value.trim();
       const id = document.getElementById('cancelBookingID').value.trim();
 
@@ -121,14 +121,11 @@
         return;
       }
 
-      // Убедимся, что телефон всегда строка и очищен от нецифровых символов
       phone = normalizePhone(phone);
-
       window.handleJSONPResponse = handleJSONPResponse;
 
       let src = `${SCRIPT_URL}?type=check&callback=handleJSONPResponse`;
       if (id) {
-        // Обработка ID как числа
         const bookingId = Number(id);
         if (isNaN(bookingId)) {
           alert('ID бронирования должен быть числом');
@@ -139,18 +136,16 @@
         src += `&phone=${encodeURIComponent(phone)}`;
       }
 
-      console.log('Inserting JSONP <script> with src =', src);
-      const s = document.createElement('script');
-      s.src = src;
-      document.body.appendChild(s);
-    }
+      const oldScript = document.getElementById("jsonpScript");
+      if (oldScript) oldScript.remove();
 
-    function normalizePhone(phone) {
-      return phone.replace(/\D/g, ''); // Удаляем все нецифровые символы
+      const script = document.createElement('script');
+      script.src = src;
+      script.id = "jsonpScript";
+      document.body.appendChild(script);
     }
 
     function handleJSONPResponse(data) {
-      console.log('handleJSONPResponse data =', data);
       const table = document.getElementById('resultsTable');
       const body = document.getElementById('resultsBody');
       const btn = document.getElementById('cancelButton');
@@ -171,8 +166,8 @@
           <td><input type="checkbox" value="${b.booking_id}"></td>
           <td>${b.booking_id}</td>
           <td>${b.checkin} — ${b.checkout}</td>
-          <td>${b.room}</td>
-          <td>${b.total}₽</td>
+          <td>${b.room || b.accommodation || ''}</td>
+          <td>${b.total || b.price || 0}₽</td>
         `;
         body.appendChild(tr);
       });
@@ -182,34 +177,32 @@
     }
 
     function cancelSelected() {
-      console.log('cancelSelected called');
       const checks = Array.from(document.querySelectorAll('#resultsBody input:checked'));
       if (!checks.length) {
-        alert('Выберите хотя бы одно');
+        alert('Выберите хотя бы одно бронирование');
         return;
       }
 
       const ids = checks.map(ch => ch.value);
       window.handleCancelResponse = handleCancelResponse;
 
-      const src = `${SCRIPT_URL}` +
-        `?action=cancel` +
-        `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}` +
-        `&callback=handleCancelResponse`;
+      const src = `${SCRIPT_URL}?action=cancel&booking_ids=${encodeURIComponent(JSON.stringify(ids))}&callback=handleCancelResponse`;
 
-      console.log('Inserting JSONP <script> for cancel with src =', src);
-      const s = document.createElement('script');
-      s.src = src;
-      document.body.appendChild(s);
+      const oldScript = document.getElementById("jsonpScript");
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement('script');
+      script.src = src;
+      script.id = "jsonpScript";
+      document.body.appendChild(script);
     }
 
     function handleCancelResponse(data) {
-      console.log('handleCancelResponse data =', data);
       if (data.success) {
         showToast(`Отменено: ${data.deleted.length}`);
         checkBooking();
       } else {
-        alert(data.error || 'Ошибка отмены');
+        alert(data.error || 'Ошибка при отмене');
       }
     }
   </script>
