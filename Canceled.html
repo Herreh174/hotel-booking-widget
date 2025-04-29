@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
   <title>Отмена бронирования</title>
@@ -70,20 +71,13 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="form-container" id="bookingForm">
     <h3>Отмена бронирования</h3>
-    <input
-      type="text"
-      id="cancelPhone"
-      placeholder="Введите номер телефона"
-    >
-    <input
-      type="text"
-      id="cancelBookingID"
-      placeholder="ИЛИ введите ID бронирования"
-    >
+    <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
+    <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
     <button onclick="checkBooking()">Показать бронирования</button>
   </div>
 
@@ -101,6 +95,7 @@
   </table>
 
   <button id="cancelButton" onclick="cancelSelected()">Отменить выбранные</button>
+
   <div class="toast" id="toast">Успешно отменено</div>
 
   <script>
@@ -119,11 +114,17 @@
     function checkBooking() {
       console.log('checkBooking called');
       const phone = document.getElementById('cancelPhone').value.trim();
-      const id    = document.getElementById('cancelBookingID').value.trim();
+      const id = document.getElementById('cancelBookingID').value.trim();
 
       if (!phone && !id) {
         alert('Введите телефон или ID');
         return;
+      }
+
+      // Убедимся, что телефон всегда строка
+      if (typeof phone !== 'string') {
+        console.log("Phone is not a string, converting");
+        phone = String(phone);  // Преобразуем в строку, если это не строка
       }
 
       window.handleJSONPResponse = handleJSONPResponse;
@@ -144,12 +145,12 @@
     function handleJSONPResponse(data) {
       console.log('handleJSONPResponse data =', data);
       const table = document.getElementById('resultsTable');
-      const body  = document.getElementById('resultsBody');
-      const btn   = document.getElementById('cancelButton');
+      const body = document.getElementById('resultsBody');
+      const btn = document.getElementById('cancelButton');
 
-      body.innerHTML        = '';
-      table.style.display   = 'none';
-      btn.style.display     = 'none';
+      body.innerHTML = '';
+      table.style.display = 'none';
+      btn.style.display = 'none';
 
       const list = data.bookings || [];
       if (!list.length) {
@@ -170,7 +171,7 @@
       });
 
       table.style.display = 'table';
-      btn.style.display   = 'inline-block';
+      btn.style.display = 'inline-block';
     }
 
     function cancelSelected() {
@@ -185,9 +186,9 @@
       window.handleCancelResponse = handleCancelResponse;
 
       const src = `${SCRIPT_URL}` +
-                  `?action=cancel` +
-                  `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}` +
-                  `&callback=handleCancelResponse`;
+        `?action=cancel` +
+        `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}` +
+        `&callback=handleCancelResponse`;
 
       console.log('Inserting JSONP <script> for cancel with src =', src);
       const s = document.createElement('script');
@@ -207,4 +208,5 @@
   </script>
 
 </body>
+
 </html>
