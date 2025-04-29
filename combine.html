@@ -1,234 +1,283 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Бронирование номера</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бронирование</title>
   <style>
     body {
-      font-family: Helvetica, Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 30px;
+      background: #f9f9f9;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
     }
     .container {
       max-width: 600px;
-      margin: 0 auto;
+      margin: 40px auto;
       background: #fff;
-      padding: 20px;
+      padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
     }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-    label {
-      color: #333;
+    .form-group {
+      margin-bottom: 15px;
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: 2px solid #FFD700;
       border-radius: 8px;
-      margin-top: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
     }
     button {
-      padding: 12px;
-      background: #FFD700;
-      color: #333;
+      width: 100%;
+      padding: 14px;
       border: none;
       border-radius: 8px;
+      background: #FFD700;
+      color: #333;
       font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
-      margin-top: 15px;
+      margin-top: 10px;
     }
-    button:hover {
-      background: #e6c200;
+    .loader {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
     }
     .toast {
-      position: fixed; top: 20px; right: 20px;
-      background: #FFD700; color: #333;
-      padding: 12px 20px; border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
       z-index: 9999;
     }
-    #manageForm { display: none; }
+    @media (max-width: 600px) {
+      .container {
+        margin: 20px 10px;
+        padding: 20px;
+      }
+      button {
+        font-size: 15px;
+        padding: 12px;
+      }
+      input, select, textarea {
+        font-size: 15px;
+        padding: 10px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Бронирование номера</h2>
-
-  <!-- Основная форма бронирования -->
-  <form id="bookingForm">
-    <label>ФИО</label>
-    <input type="text" id="full_name" required>
-
-    <label>Телефон</label>
-    <input type="tel" id="phone" required>
-
-    <label>Email</label>
-    <input type="email" id="email" required>
-
-    <label>Количество гостей</label>
-    <input type="number" id="guests" min="1" max="6" required>
-
-    <label>Дата заезда</label>
-    <input type="date" id="checkin" required>
-
-    <label>Дата выезда</label>
-    <input type="date" id="checkout" required>
-
-    <label>Номер</label>
-    <select id="room" disabled>
-      <option>Сначала выберите даты</option>
-    </select>
-
-    <div id="total_price"></div>
-
-    <label>Пожелания</label>
-    <textarea id="comments"></textarea>
-
-    <div>
-      <input type="checkbox" id="agree" required>
-      <label for="agree">Я согласен с условиями проживания</label>
-    </div>
-
-    <button type="submit" id="submitBtn" disabled>Забронировать</button>
-    <button type="button" id="manageBtn">Управление бронированием</button>
-  </form>
-
-  <!-- Форма управления бронированием -->
-  <div id="manageForm">
-    <label>ID бронирования (например: N-12345678)</label>
-    <input type="text" id="searchID">
-    <button type="button" id="searchBtn">Найти</button>
+<div class="container" id="bookingForm">
+  <div style="text-align:right; margin-bottom:10px;">
+    <button type="button" onclick="openManageForm()" style="background:#ccc;">
+      Управление бронированием
+    </button>
   </div>
 
-  <!-- Кнопка возврата -->
-  <button id="newBookingBtn" style="display:none;">Новое бронирование</button>
+  <h2 style="text-align:center;">Форма бронирования</h2>
+  <form onsubmit="submitForm(event)">
+    <div class="form-group">
+      <input type="text" id="fullName" placeholder="ФИО" required>
+    </div>
+    <div class="form-group">
+      <input type="tel" id="phone" placeholder="Телефон" required>
+    </div>
+    <div class="form-group">
+      <input type="email" id="email" placeholder="Email" required>
+    </div>
+    <div class="form-group">
+      <label>Дата заезда:</label>
+      <input type="date" id="checkin" required>
+    </div>
+    <div class="form-group">
+      <label>Дата выезда:</label>
+      <input type="date" id="checkout" required>
+    </div>
+    <div class="form-group">
+      <input type="number" id="guests" placeholder="Количество гостей" required>
+    </div>
+    <div class="form-group">
+      <select id="room_type" required>
+        <option value="">Выберите номер</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <textarea id="comments" placeholder="Комментарий (необязательно)"></textarea>
+    </div>
+    <button type="submit">Забронировать</button>
+    <div class="loader" id="loader">Загрузка...</div>
+  </form>
 </div>
 
-<!-- Контейнер для тостов -->
-<div id="toastContainer"></div>
+<!-- Управление бронированием -->
+<div id="manageForm" class="container" style="display:none;">
+  <h2 style="text-align:center;">Управление бронированием</h2>
+  <div class="form-group">
+    <input type="text" id="searchBookingID" placeholder="Введите ID бронирования">
+  </div>
+  <button onclick="searchBooking()">Найти</button>
+  <div id="foundBookingInfo" style="display:none; margin-top:15px; background:#f1f1f1; padding:15px; border-radius:8px;"></div>
+  <div style="margin-top:15px;">
+    <button onclick="goBackToBooking()" style="background:#ccc;">Назад к бронированию</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-const API = 'ВАШ_АДРЕС_АПИ'; // Замените на ваш Apps Script URL
+const API = 'https://script.google.com/macros/s/AKfycbyGYP3zAhRA8TmGqczGeydaItCdhk8eFjEw6FyYB0X0s6M6oc-k3s8n1SoQYd5JmeCt/exec';
 
-function generateBookingID() {
-  return 'N-' + Math.floor(Math.random() * 90000000 + 10000000);
+function showLoader(show) {
+  document.getElementById('loader').style.display = show ? 'block' : 'none';
 }
 
-function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerText = msg;
-  document.getElementById('toastContainer').appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const bookingForm = document.getElementById('bookingForm');
-  const manageForm = document.getElementById('manageForm');
-  const newBookingBtn = document.getElementById('newBookingBtn');
+function submitForm(event) {
+  event.preventDefault();
+  showLoader(true);
 
-  // Управление формами
-  document.getElementById('manageBtn').addEventListener('click', () => {
-    bookingForm.style.display = 'none';
-    manageForm.style.display = 'block';
-    newBookingBtn.style.display = 'block';
-  });
+  const data = {
+    action: 'book',
+    full_name: document.getElementById('fullName').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    checkin: document.getElementById('checkin').value,
+    checkout: document.getElementById('checkout').value,
+    guests: document.getElementById('guests').value,
+    room_type: document.getElementById('room_type').value,
+    comments: document.getElementById('comments').value
+  };
 
-  newBookingBtn.addEventListener('click', () => {
-    manageForm.style.display = 'none';
-    bookingForm.style.display = 'block';
-    newBookingBtn.style.display = 'none';
-  });
-
-  // Отправка формы бронирования
-  bookingForm.addEventListener('submit', e => {
-    e.preventDefault();
-    if (!document.getElementById('agree').checked) {
-      showToast('Вы должны согласиться с условиями!');
-      return;
+  fetch(API, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    mode: 'cors'
+  })
+  .then(r => r.json())
+  .then(res => {
+    showLoader(false);
+    if (res.result === 'success') {
+      showToast('Бронирование успешно! ID: ' + res.booking_id);
+      document.querySelector('form').reset();
+    } else {
+      showToast('Ошибка: ' + res.message);
     }
+  })
+  .catch(() => {
+    showLoader(false);
+    showToast('Ошибка отправки.');
+  });
+}
 
-    const bookingID = generateBookingID();
-    const data = {
-      booking_id: bookingID,
-      full_name: document.getElementById('full_name').value,
-      phone: document.getElementById('phone').value,
-      email: document.getElementById('email').value,
-      guests: document.getElementById('guests').value,
-      checkin: document.getElementById('checkin').value,
-      checkout: document.getElementById('checkout').value,
-      room_id: document.getElementById('room').value,
-      comments: document.getElementById('comments').value,
-      total_price: 1000 // Заглушка
-    };
+function loadRooms() {
+  const script = document.createElement('script');
+  script.src = `${API}?action=rooms&callback=populateRooms`;
+  document.body.appendChild(script);
+}
 
-    fetch(API, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      mode: 'cors'
-    })
+function populateRooms(data) {
+  const select = document.getElementById('room_type');
+  data.rooms.forEach(room => {
+    const option = document.createElement('option');
+    option.value = room.name;
+    option.textContent = room.name + ' — ' + room.description;
+    select.appendChild(option);
+  });
+}
+
+function openManageForm() {
+  document.getElementById('bookingForm').style.display = 'none';
+  document.getElementById('manageForm').style.display = 'block';
+}
+
+function goBackToBooking() {
+  document.getElementById('manageForm').style.display = 'none';
+  document.getElementById('bookingForm').style.display = 'block';
+}
+
+function searchBooking() {
+  const id = document.getElementById('searchBookingID').value.trim();
+  if (!id) {
+    showToast('Введите ID для поиска.');
+    return;
+  }
+
+  showLoader(true);
+  fetch(`${API}?action=get&id=${encodeURIComponent(id)}`)
     .then(r => r.json())
-    .then(res => {
-      if (res.result === 'success') {
-        alert(`Бронирование успешно! Ваш ID: ${bookingID}`);
-        bookingForm.reset();
-        document.getElementById('submitBtn').disabled = true;
+    .then(data => {
+      showLoader(false);
+      const infoBlock = document.getElementById('foundBookingInfo');
+      if (data && data.result === 'success' && data.booking) {
+        const b = data.booking;
+        infoBlock.innerHTML = `
+          <p><strong>ФИО:</strong> ${b.full_name}</p>
+          <p><strong>Телефон:</strong> ${b.phone}</p>
+          <p><strong>Email:</strong> ${b.email}</p>
+          <p><strong>Даты:</strong> ${b.checkin} — ${b.checkout}</p>
+          <p><strong>Гости:</strong> ${b.guests}</p>
+          <p><strong>Номер:</strong> ${b.room_type}</p>
+          <p><strong>Комментарий:</strong> ${b.comments || '-'}</p>
+          <button onclick="cancelBooking('${id}')" style="margin-top:10px; padding:10px; background:red; color:white; border:none; border-radius:8px;">
+            Отменить бронирование
+          </button>`;
+        infoBlock.style.display = 'block';
       } else {
-        showToast('Ошибка бронирования!');
+        infoBlock.innerHTML = '<p style="color:red;">Бронирование не найдено.</p>';
+        infoBlock.style.display = 'block';
       }
     })
-    .catch(() => showToast('Ошибка соединения'));
-  });
-
-  // Поиск бронирования
-  document.getElementById('searchBtn').addEventListener('click', () => {
-    const id = document.getElementById('searchID').value.trim();
-    if (!id.startsWith('N-')) {
-      showToast('Неверный формат ID');
-      return;
-    }
-
-    fetch(`${API}?action=search&id=${encodeURIComponent(id)}`)
-      .then(r => r.json())
-      .then(res => {
-        if (res.result === 'success' && res.booking) {
-          const b = res.booking;
-          const win = window.open('', '', 'width=600,height=500');
-          win.document.write(`
-            <h2>Бронирование ${b.booking_id}</h2>
-            <p><strong>Имя:</strong> ${b.full_name}</p>
-            <p><strong>Телефон:</strong> ${b.phone}</p>
-            <p><strong>Дата:</strong> ${b.checkin} – ${b.checkout}</p>
-            <p><strong>Номер:</strong> ${b.room_id}</p>
-            <p><strong>Комментарий:</strong> ${b.comments}</p>
-            <button onclick="window.opener.cancelBooking('${b.booking_id}', window)">Отменить бронирование</button>
-            <button onclick="window.close()">Закрыть</button>
-          `);
-        } else {
-          showToast('Бронирование не найдено');
-        }
-      });
-  });
-});
-
-// Глобальная функция отмены бронирования
-function cancelBooking(id, win) {
-  fetch(`${API}?action=cancel&id=${encodeURIComponent(id)}`)
-    .then(r => r.json())
-    .then(res => {
-      if (res.result === 'success') {
-        alert('Бронирование успешно отменено!');
-        win.close();
-      } else {
-        showToast('Не удалось отменить');
-      }
+    .catch(err => {
+      showLoader(false);
+      showToast('Ошибка при поиске.');
+      console.error(err);
     });
 }
+
+function cancelBooking(id) {
+  if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
+  showLoader(true);
+  fetch(API, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'cancel', booking_id: id }),
+    mode: 'cors'
+  })
+  .then(r => r.json())
+  .then(res => {
+    showLoader(false);
+    if (res.result === 'success') {
+      showToast('Бронирование отменено.');
+      document.getElementById('foundBookingInfo').innerHTML = '';
+    } else {
+      showToast('Ошибка отмены.');
+    }
+  })
+  .catch(() => {
+    showLoader(false);
+    showToast('Ошибка отмены.');
+  });
+}
+
+// Загрузка номеров при открытии страницы
+window.onload = loadRooms;
 </script>
+
 </body>
 </html>
