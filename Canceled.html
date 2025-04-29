@@ -157,7 +157,7 @@
       console.log('Отправка запроса с данными:', { phone, bookingID });
 
       // Отправляем GET-запрос в Google Apps Script для поиска брони
-      fetch(`https://script.google.com/macros/library/d/1UWY8z2PpQootxOe-6LCOVl9OquNSChyIBDmcRqbkTUooBiCDHX4k-cjc/21/exec?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}`)
+      fetch(`https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}`)
         .then(res => res.json())
         .then(data => {
           console.log('Ответ от сервера:', data);  // Логируем ответ от сервера
