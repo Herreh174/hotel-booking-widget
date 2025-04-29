@@ -122,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Модальное окно -->
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <div class="modal-icon">⚠️</div>
@@ -132,11 +131,11 @@
     </div>
   </div>
 
-  <!-- Toast сообщение -->
   <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
 
   <script>
     let selectedBooking = null;
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
 
     function showToast(message) {
       const toast = document.getElementById('toast');
@@ -154,30 +153,26 @@
         return;
       }
 
-      console.log('Отправка запроса с данными:', { phone, bookingID });
+      const callbackName = 'handleJSONPResponse';
+      const script = document.createElement('script');
+      const url = `${SCRIPT_URL}?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}&callback=${callbackName}`;
+      script.src = url;
+      document.body.appendChild(script);
+    }
 
-      // Отправляем GET-запрос в Google Apps Script для поиска брони
-      fetch(`https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec?type=check&phone=${encodeURIComponent(phone)}&booking_id=${encodeURIComponent(bookingID)}`)
-        .then(res => res.json())
-        .then(data => {
-          console.log('Ответ от сервера:', data);  // Логируем ответ от сервера
-          if (data && data.booking) {
-            selectedBooking = data.booking;
-            document.getElementById('modalText').innerHTML = `
-              <b>Имя:</b> ${data.booking.full_name}<br>
-              <b>Телефон:</b> ${data.booking.phone}<br>
-              <b>Даты:</b> ${data.booking.checkin} - ${data.booking.checkout}<br><br>
-              Вы уверены, что хотите отменить бронирование?
-            `;
-            openModal();
-          } else {
-            alert('Бронирование не найдено');
-          }
-        })
-        .catch(error => {
-          console.error('Ошибка запроса:', error);  // Логируем ошибку
-          alert('Ошибка запроса');
-        });
+    function handleJSONPResponse(data) {
+      if (data && data.booking) {
+        selectedBooking = data.booking;
+        document.getElementById('modalText').innerHTML = `
+          <b>Имя:</b> ${data.booking.full_name}<br>
+          <b>Телефон:</b> ${data.booking.phone}<br>
+          <b>Даты:</b> ${data.booking.checkin} - ${data.booking.checkout}<br><br>
+          Вы уверены, что хотите отменить бронирование?
+        `;
+        openModal();
+      } else {
+        alert('Бронирование не найдено');
+      }
     }
 
     function openModal() {
@@ -191,8 +186,11 @@
     function confirmCancel() {
       if (!selectedBooking || !selectedBooking.booking_id) return;
 
-      fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
+      fetch(SCRIPT_URL, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           action: 'cancel',
           booking_id: selectedBooking.booking_id
