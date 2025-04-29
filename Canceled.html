@@ -10,11 +10,13 @@
       align-items: center;
       padding: 40px 20px;
     }
+
     #bookingForm {
       width: 100%;
       max-width: 500px;
       animation: fadeIn 1s ease forwards;
     }
+
     #bookingForm input {
       display: block;
       margin-bottom: 10px;
@@ -23,6 +25,7 @@
       border-radius: 8px;
       border: 1px solid #ccc;
     }
+
     #bookingForm button {
       display: block;
       margin: 0 auto;
@@ -33,6 +36,7 @@
       cursor: pointer;
       font-weight: bold;
     }
+
     #resultsTable {
       width: 100%;
       max-width: 800px;
@@ -40,14 +44,18 @@
       border-collapse: collapse;
       display: none;
     }
-    #resultsTable th, #resultsTable td {
+
+    #resultsTable th,
+    #resultsTable td {
       border: 1px solid #ccc;
       padding: 10px;
       text-align: left;
     }
+
     #resultsTable th {
       background-color: #f9f9f9;
     }
+
     .toast {
       position: fixed;
       top: 20px;
@@ -56,51 +64,82 @@
       color: #333;
       padding: 12px 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
       z-index: 9999;
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <div class="form-container">
+  <div class="form-container" id="bookingForm">
     <h3>Отмена бронирования</h3>
-    <input type="text" id="cancelPhone" placeholder="Введите номер телефона">
-    <input type="text" id="cancelBookingID" placeholder="ИЛИ введите ID бронирования">
-    <button onclick="checkBooking()">Показать бронирования</button>
+    <input
+      type="text"
+      id="cancelPhone"
+      placeholder="Введите номер телефона"
+    >
+    <input
+      type="text"
+      id="cancelBookingID"
+      placeholder="ИЛИ введите ID бронирования"
+    >
+    <button onclick="checkBooking()">
+      Показать бронирования
+    </button>
   </div>
 
-  <table id="resultsTable" style="display:none; width:100%; max-width:800px; border-collapse:collapse;">
+  <table id="resultsTable">
     <thead>
-      <tr><th></th><th>ID</th><th>Даты</th><th>Объект</th><th>Сумма</th></tr>
+      <tr>
+        <th></th>
+        <th>ID</th>
+        <th>Даты</th>
+        <th>Объект</th>
+        <th>Сумма</th>
+      </tr>
     </thead>
     <tbody id="resultsBody"></tbody>
   </table>
 
-  <button id="cancelButton" onclick="cancelSelected()" style="display:none;">Отменить выбранные</button>
+  <button id="cancelButton" onclick="cancelSelected()">
+    Отменить выбранные
+  </button>
 
-  <div class="toast" id="toast" style="display:none;">Успешно отменено</div>
+  <div class="toast" id="toast">
+    Успешно отменено
+  </div>
 
   <script>
     // **ВАЖНО**: замените на ваш реальный URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec";
 
     function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.style.display = 'block';
-      setTimeout(()=> t.style.display='none', 3000);
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
     }
 
     function checkBooking() {
       const phone = document.getElementById('cancelPhone').value.trim();
       const id    = document.getElementById('cancelBookingID').value.trim();
-      if (!phone && !id) return alert('Введите телефон или ID');
+
+      if (!phone && !id) {
+        alert('Введите телефон или ID');
+        return;
+      }
 
       window.handleJSONPResponse = handleJSONPResponse;
-      let src = SCRIPT_URL + '?type=check&callback=handleJSONPResponse';
-      if (id) src += '&booking_id=' + encodeURIComponent(id);
-      else    src += '&phone='      + encodeURIComponent(phone);
+
+      let src = `${SCRIPT_URL}?type=check&callback=handleJSONPResponse`;
+      if (id) {
+        src += `&booking_id=${encodeURIComponent(id)}`;
+      } else {
+        src += `&phone=${encodeURIComponent(phone)}`;
+      }
 
       const s = document.createElement('script');
       s.src = src;
@@ -111,36 +150,48 @@
       const table = document.getElementById('resultsTable');
       const body  = document.getElementById('resultsBody');
       const btn   = document.getElementById('cancelButton');
-      body.innerHTML=''; table.style.display='none'; btn.style.display='none';
+
+      body.innerHTML    = '';
+      table.style.display  = 'none';
+      btn.style.display    = 'none';
 
       const list = data.bookings || [];
-      if (!list.length) return alert(data.error || 'Не найдено');
+      if (!list.length) {
+        alert(data.error || 'Не найдено');
+        return;
+      }
 
-      list.forEach(b=>{
+      list.forEach(b => {
         const tr = document.createElement('tr');
-        tr.innerHTML=`
+        tr.innerHTML = `
           <td><input type="checkbox" value="${b.booking_id}"></td>
           <td>${b.booking_id}</td>
-          <td>${b.checkin}—${b.checkout}</td>
+          <td>${b.checkin} — ${b.checkout}</td>
           <td>${b.room}</td>
-          <td>${b.total}₽</td>`;
+          <td>${b.total}₽</td>
+        `;
         body.appendChild(tr);
       });
-      table.style.display='table';
-      btn.style.display='inline-block';
+
+      table.style.display = 'table';
+      btn.style.display   = 'inline-block';
     }
 
     function cancelSelected() {
-      const checks = [...document.querySelectorAll('#resultsBody input:checked')];
-      if (!checks.length) return alert('Выберите хотя бы одно');
-      const ids = checks.map(ch=>ch.value);
+      const checks = Array.from(document.querySelectorAll('#resultsBody input:checked'));
+      if (!checks.length) {
+        alert('Выберите хотя бы одно');
+        return;
+      }
 
+      const ids = checks.map(ch => ch.value);
       window.handleCancelResponse = handleCancelResponse;
+
       const s = document.createElement('script');
-      s.src = SCRIPT_URL
-            + '?action=cancel'
-            + '&booking_ids=' + encodeURIComponent(JSON.stringify(ids))
-            + '&callback=handleCancelResponse';
+      s.src = `${SCRIPT_URL}`
+            + `?action=cancel`
+            + `&booking_ids=${encodeURIComponent(JSON.stringify(ids))}`
+            + `&callback=handleCancelResponse`;
       document.body.appendChild(s);
     }
 
@@ -153,5 +204,6 @@
       }
     }
   </script>
+
 </body>
 </html>
