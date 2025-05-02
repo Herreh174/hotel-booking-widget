@@ -32,35 +32,11 @@
       60%      {content:'..';}
       80%,100% {content:'...';}
     }
-    .modal {
-      display:none; position:fixed; z-index:10000;
-      left:0; top:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.5);
-      justify-content:center; align-items:center;
-      animation: fadeIn 0.4s forwards;
-    }
-    .modal-content {
-      background:#fff; padding:30px 40px; border-radius:16px;
-      text-align:center; max-width:400px;
-      transform:scale(0.8); opacity:0;
-      animation: zoomIn 0.4s forwards;
-    }
-    .modal-icon { font-size:50px; color:#FFD700; margin-bottom:15px; }
-    .modal-button {
-      margin-top:20px; padding:10px 20px; background:#FFD700;
-      border:none; border-radius:8px; cursor:pointer;
-      color:#333; font-weight:bold; transition:background 0.3s;
-    }
-    .modal-button:hover { background:#e6c200; }
-    @keyframes zoomIn {
-      from {transform:scale(0.8); opacity:0;}
-      to   {transform:scale(1);   opacity:1;}
-    }
   </style>
 </head>
 <body>
 
-  <!-- Форма для бронирования -->
+  <!-- Форма -->
   <div style="max-width:600px; margin:0 auto; padding:20px;
               background:#fff; border-radius:12px;
               box-shadow:0 0 20px rgba(0,0,0,0.05);
@@ -142,68 +118,9 @@
     </form>
   </div>
 
-  <!-- Модальное окно успеха -->
-  <div id="successModal" class="modal">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-icon">✅</div>
-      <h3>Спасибо за бронирование!</h3>
-      <p>Ваш ID бронирования: <span id="bookingID"></span></p>
-      <p>Мы скоро свяжемся с вами для подтверждения.</p>
-      <button onclick="closeModal()" class="modal-button">Закрыть</button>
-    </div>
-  </div>
-
-  <!-- Контейнер для тостов -->
-  <div id="toastContainer"></div>
-
-  <!-- Форма для отмены бронирования -->
-  <div id="cancelForm" style="max-width:600px; margin:30px auto; padding:20px; background:#fff; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.05);">
-    <h2 style="text-align:center; color:#333;">Отмена бронирования</h2>
-    <input type="text" id="cancelBookingID" placeholder="Введите ID бронирования" style="width:100%; padding:10px; border:2px solid #FFD700; border-radius:8px;">
-    <button type="button" id="cancelBtn" style="padding:12px;background:#FFD700;color:#333;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">
-      Отменить бронирование
-    </button>
-  </div>
-
   <!-- СКРИПТ -->
   <script>
     const API = 'https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec';
-
-    // Функция для отмены бронирования
-    function cancelBooking() {
-      const bookingID = document.getElementById('cancelBookingID').value;
-      if (!bookingID) {
-        showToast('Пожалуйста, введите ID бронирования');
-        return;
-      }
-
-      fetch(API, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'cancel', booking_id: bookingID }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.result === 'success') {
-          showToast('Бронирование отменено.');
-        } else {
-          showToast(data.error || 'Ошибка отмены бронирования.');
-        }
-      })
-      .catch(error => showToast('Ошибка сети. Попробуйте позже.'));
-    }
-
-    document.getElementById('cancelBtn').addEventListener('click', cancelBooking);
-
-    function showToast(msg) {
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.innerText = msg;
-      document.getElementById('toastContainer').appendChild(t);
-      setTimeout(() => t.remove(), 3000);
-    }
 
     // Функция для отображения доступных номеров
     function displayAvailableRooms(res) {
@@ -212,7 +129,7 @@
         showToast(res.error);
         return;
       }
-      availableRooms = res.available_rooms || [];
+      const availableRooms = res.available_rooms || [];
       const roomSelect = document.getElementById('room');
       roomSelect.innerHTML = '<option value="">Выберите номер</option>';
       availableRooms.forEach(r => {
@@ -231,14 +148,20 @@
       const ci = document.getElementById('checkin').value;
       const co = document.getElementById('checkout').value;
       const g  = +document.getElementById('guests').value;
-      if (!ci || !co || !g) return;
+      if (!ci || !co || !g) return;  // Если нет дат или количества гостей, не выполняем запрос.
+
       if (new Date(co) <= new Date(ci)) {
         showToast('Дата выезда должна быть позже даты заезда.');
         return;
       }
-      showLoader(true);
+
+      showLoader(true);  // Показываем индикатор загрузки.
+
+      // Удаляем старый скрипт (если он был)
       const old = document.getElementById('jsonp');
       if (old) old.remove();
+
+      // Формируем URL с параметрами
       const params = `?checkin=${encodeURIComponent(ci)}&checkout=${encodeURIComponent(co)}&callback=displayAvailableRooms`;
       const s = document.createElement('script');
       s.src = API + params;
@@ -246,6 +169,19 @@
       document.body.appendChild(s);
     }
 
+    function showLoader(show) {
+      document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.innerText = msg;
+      document.getElementById('toastContainer').appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    // Функция для подсчета дней
     function updateTotalPrice() {
       const sel = document.getElementById('room');
       const nights = countNights();
@@ -265,7 +201,7 @@
     function countNights() {
       const a = new Date(document.getElementById('checkin').value);
       const b = new Date(document.getElementById('checkout').value);
-      return Math.ceil((b - a) / (1000*60*60*24));
+      return Math.ceil((b - a) / (1000 * 60 * 60 * 24));
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -278,70 +214,11 @@
 
       checkin.min = checkout.min = tomorrow.toISOString().split('T')[0];
 
-      ['checkin','checkout','guests'].forEach(id =>
+      ['checkin', 'checkout', 'guests'].forEach(id =>
         document.getElementById(id).addEventListener('change', fetchRooms)
       );
       document.getElementById('room').addEventListener('change', updateTotalPrice);
     });
-
-    document.getElementById('bookingForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      btn.classList.add('loading');
-      
-      if (!document.getElementById('agree').checked) {
-        showToast('Нужно согласиться с условиями проживания!');
-        btn.classList.remove('loading');
-        return;
-      }
-      
-      const p = {
-        booking_id: 'N-' + Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000,
-        full_name: document.getElementById('full_name').value,
-        phone:     document.getElementById('phone').value,
-        email:     document.getElementById('email').value,
-        guests:    document.getElementById('guests').value,
-        checkin:   document.getElementById('checkin').value,
-        checkout:  document.getElementById('checkout').value,
-        room_id:   document.getElementById('room').value,
-        room_type: document.getElementById('room').options[document.getElementById('room').selectedIndex].innerText,
-        total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
-        comments:  document.getElementById('comments').value
-      };
-      
-      fetch(API, {
-        method: 'POST',
-        body: JSON.stringify(p),
-        mode: 'cors'
-      })
-      .then(r => r.json())
-      .then(r => {
-        if (r.result === 'success') {
-          document.getElementById('bookingID').textContent = p.booking_id;
-          openModal();
-          document.getElementById('bookingForm').reset();
-          document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
-          document.getElementById('submitBtn').textContent = 'Забронировать';
-        } else {
-          showToast('Ошибка бронирования. Попробуйте снова.');
-        }
-      })
-      .catch(_ => showToast('Ошибка отправки формы.'))
-      .finally(_ => {
-        btn.classList.remove('loading');
-        btn.disabled = true;
-        showLoader(false);
-      });
-    });
-
-    function openModal() {
-      document.getElementById('successModal').style.display = 'flex';
-      setTimeout(closeModal,5000);
-    }
-    function closeModal() {
-      document.getElementById('successModal').style.display = 'none';
-    }
-    document.getElementById('successModal').addEventListener('click', closeModal);
   </script>
 </body>
 </html>
