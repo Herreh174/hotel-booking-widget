@@ -204,52 +204,144 @@
       document.getElementById('toastContainer').appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
+
+    // Функция для отображения доступных номеров
     function displayAvailableRooms(res) {
-  showLoader(false);
-  if (res.error) {
-    showToast(res.error);
-    return;
-  }
-  availableRooms = res.available_rooms || [];
-  const roomSelect = document.getElementById('room');
-  roomSelect.innerHTML = '<option value="">Выберите номер</option>';  // Очистим старые данные
-  availableRooms.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.room_id;
-    opt.dataset.price = r.price;
-    opt.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
-    roomSelect.appendChild(opt);
-  });
-  roomSelect.disabled = availableRooms.length === 0;
-  updateTotalPrice();
-}
+      showLoader(false);
+      if (res.error) {
+        showToast(res.error);
+        return;
+      }
+      availableRooms = res.available_rooms || [];
+      const roomSelect = document.getElementById('room');
+      roomSelect.innerHTML = '<option value="">Выберите номер</option>';
+      availableRooms.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.room_id;
+        opt.dataset.price = r.price;
+        opt.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
+        roomSelect.appendChild(opt);
+      });
+      roomSelect.disabled = availableRooms.length === 0;
+      updateTotalPrice();
+    }
 
-function fetchRooms() {
-  const ci = document.getElementById('checkin').value;
-  const co = document.getElementById('checkout').value;
-  const g  = +document.getElementById('guests').value;
+    // Функция для получения доступных номеров
+    function fetchRooms() {
+      const ci = document.getElementById('checkin').value;
+      const co = document.getElementById('checkout').value;
+      const g  = +document.getElementById('guests').value;
+      if (!ci || !co || !g) return;
+      if (new Date(co) <= new Date(ci)) {
+        showToast('Дата выезда должна быть позже даты заезда.');
+        return;
+      }
+      showLoader(true);
+      const old = document.getElementById('jsonp');
+      if (old) old.remove();
+      const params = `?checkin=${encodeURIComponent(ci)}&checkout=${encodeURIComponent(co)}&callback=displayAvailableRooms`;
+      const s = document.createElement('script');
+      s.src = API + params;
+      s.id = 'jsonp';
+      document.body.appendChild(s);
+    }
 
-  if (!ci || !co || !g) return;  // Если нет дат или количества гостей, не выполняем запрос.
+    function updateTotalPrice() {
+      const sel = document.getElementById('room');
+      const nights = countNights();
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.price && nights > 0) {
+        const total = parseFloat(opt.dataset.price) * nights;
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = `К оплате ${total} ₽`;
+        btn.disabled = false;
+      } else {
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = 'Забронировать';
+        btn.disabled = true;
+      }
+    }
 
-  if (new Date(co) <= new Date(ci)) {
-    showToast('Дата выезда должна быть позже даты заезда.');
-    return;
-  }
+    function countNights() {
+      const a = new Date(document.getElementById('checkin').value);
+      const b = new Date(document.getElementById('checkout').value);
+      return Math.ceil((b - a) / (1000*60*60*24));
+    }
 
-  showLoader(true);  // Показываем индикатор загрузки.
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
 
-  // Удаляем старый скрипт (если он был)
-  const old = document.getElementById('jsonp');
-  if (old) old.remove();
+      const checkin = document.getElementById('checkin');
+      const checkout = document.getElementById('checkout');
 
-  // Формируем URL с параметрами
-  const params = `?checkin=${encodeURIComponent(ci)}&checkout=${encodeURIComponent(co)}&callback=displayAvailableRooms`;
-  const s = document.createElement('script');
-  s.src = API + params;
-  s.id = 'jsonp';
-  document.body.appendChild(s);
-}
+      checkin.min = checkout.min = tomorrow.toISOString().split('T')[0];
 
+      ['checkin','checkout','guests'].forEach(id =>
+        document.getElementById(id).addEventListener('change', fetchRooms)
+      );
+      document.getElementById('room').addEventListener('change', updateTotalPrice);
+    });
+
+    document.getElementById('bookingForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.classList.add('loading');
+      
+      if (!document.getElementById('agree').checked) {
+        showToast('Нужно согласиться с условиями проживания!');
+        btn.classList.remove('loading');
+        return;
+      }
+      
+      const p = {
+        booking_id: 'N-' + Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000,
+        full_name: document.getElementById('full_name').value,
+        phone:     document.getElementById('phone').value,
+        email:     document.getElementById('email').value,
+        guests:    document.getElementById('guests').value,
+        checkin:   document.getElementById('checkin').value,
+        checkout:  document.getElementById('checkout').value,
+        room_id:   document.getElementById('room').value,
+        room_type: document.getElementById('room').options[document.getElementById('room').selectedIndex].innerText,
+        total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
+        comments:  document.getElementById('comments').value
+      };
+      
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify(p),
+        mode: 'cors'
+      })
+      .then(r => r.json())
+      .then(r => {
+        if (r.result === 'success') {
+          document.getElementById('bookingID').textContent = p.booking_id;
+          openModal();
+          document.getElementById('bookingForm').reset();
+          document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
+          document.getElementById('submitBtn').textContent = 'Забронировать';
+        } else {
+          showToast('Ошибка бронирования. Попробуйте снова.');
+        }
+      })
+      .catch(_ => showToast('Ошибка отправки формы.'))
+      .finally(_ => {
+        btn.classList.remove('loading');
+        btn.disabled = true;
+        showLoader(false);
+      });
+    });
+
+    function openModal() {
+      document.getElementById('successModal').style.display = 'flex';
+      setTimeout(closeModal,5000);
+    }
+    function closeModal() {
+      document.getElementById('successModal').style.display = 'none';
+    }
+    document.getElementById('successModal').addEventListener('click', closeModal);
   </script>
 </body>
 </html>
