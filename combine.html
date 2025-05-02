@@ -215,7 +215,7 @@
 
       showLoader(true);
 
-      fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
+      fetch('https://script.google.com/macros/s/AKfycbxhfKMv_OZF2FUPGv3pobOCDRmmNGgLyoNfznGDtcFrwP95NBC1nxC9ogTvS4hqv6g/exec', {
         method: 'POST',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
@@ -269,7 +269,7 @@
       const bookingID = document.getElementById('manageID').value;
       if (!bookingID) return;
 
-      fetch(`YOUR_GOOGLE_APPS_SCRIPT_URL?booking_id=${bookingID}`)
+      fetch(`https://script.google.com/macros/s/AKfycbxhfKMv_OZF2FUPGv3pobOCDRmmNGgLyoNfznGDtcFrwP95NBC1nxC9ogTvS4hqv6g/exec?booking_id=${bookingID}`)
         .then(response => response.json())
         .then(data => {
           if (data.error) {
