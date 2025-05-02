@@ -204,6 +204,52 @@
       document.getElementById('toastContainer').appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
+    function displayAvailableRooms(res) {
+  showLoader(false);
+  if (res.error) {
+    showToast(res.error);
+    return;
+  }
+  availableRooms = res.available_rooms || [];
+  const roomSelect = document.getElementById('room');
+  roomSelect.innerHTML = '<option value="">Выберите номер</option>';  // Очистим старые данные
+  availableRooms.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.room_id;
+    opt.dataset.price = r.price;
+    opt.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
+    roomSelect.appendChild(opt);
+  });
+  roomSelect.disabled = availableRooms.length === 0;
+  updateTotalPrice();
+}
+
+function fetchRooms() {
+  const ci = document.getElementById('checkin').value;
+  const co = document.getElementById('checkout').value;
+  const g  = +document.getElementById('guests').value;
+
+  if (!ci || !co || !g) return;  // Если нет дат или количества гостей, не выполняем запрос.
+
+  if (new Date(co) <= new Date(ci)) {
+    showToast('Дата выезда должна быть позже даты заезда.');
+    return;
+  }
+
+  showLoader(true);  // Показываем индикатор загрузки.
+
+  // Удаляем старый скрипт (если он был)
+  const old = document.getElementById('jsonp');
+  if (old) old.remove();
+
+  // Формируем URL с параметрами
+  const params = `?checkin=${encodeURIComponent(ci)}&checkout=${encodeURIComponent(co)}&callback=displayAvailableRooms`;
+  const s = document.createElement('script');
+  s.src = API + params;
+  s.id = 'jsonp';
+  document.body.appendChild(s);
+}
+
   </script>
 </body>
 </html>
