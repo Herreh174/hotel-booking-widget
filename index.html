@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Бронирование номера</title>
-  <!-- СТИЛИ -->
   <style>
     /* Общие стили */
     #bookingForm { animation: fadeIn 1s ease forwards; }
@@ -61,7 +60,7 @@
 </head>
 <body>
 
-  <!-- ФОРМА -->
+  <!-- Форма -->
   <div style="max-width:600px; margin:0 auto; padding:20px;
               background:#fff; border-radius:12px;
               box-shadow:0 0 20px rgba(0,0,0,0.05);
@@ -74,8 +73,6 @@
                              padding:10px;border-radius:8px;">
         Загрузка...
       </div>
-
-      <!-- Входные поля формы (ФИО, телефон, email, количество гостей, и даты) -->
 
       <div>
         <label for="full_name" style="color:#333;">ФИО</label>
@@ -164,11 +161,6 @@
     const API = 'https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec';
     let availableRooms = [];
 
-    // Функция для генерации уникального ID бронирования
-    function generateBookingID() {
-      return Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000;
-    }
-
     function showLoader(show) {
       document.getElementById('loader').style.display = show ? 'block' : 'none';
     }
@@ -181,7 +173,6 @@
       setTimeout(() => t.remove(), 3000);
     }
 
-    // JSONP callback
     function displayAvailableRooms(res) {
       showLoader(false);
       if (res.error) {
@@ -257,63 +248,56 @@
         document.getElementById(id).addEventListener('change', fetchRooms)
       );
       document.getElementById('room').addEventListener('change', updateTotalPrice);
+    });
 
-      // submit
-      const bookingID = generateBookingID(); // Генерация ID бронирования
+    document.getElementById('bookingForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.classList.add('loading');
       
-      document.getElementById('bookingForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.classList.add('loading');
-        
-        if (!document.getElementById('agree').checked) {
-          showToast('Нужно согласиться с условиями проживания!');
-          btn.classList.remove('loading');
-          return;
+      if (!document.getElementById('agree').checked) {
+        showToast('Нужно согласиться с условиями проживания!');
+        btn.classList.remove('loading');
+        return;
+      }
+      
+      const p = {
+        booking_id: 'N-' + Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000,  // Генерация ID бронирования
+        full_name: document.getElementById('full_name').value,
+        phone:     document.getElementById('phone').value,
+        email:     document.getElementById('email').value,
+        guests:    document.getElementById('guests').value,
+        checkin:   document.getElementById('checkin').value,
+        checkout:  document.getElementById('checkout').value,
+        room_id:   document.getElementById('room').value,
+        room_type: document.getElementById('room')
+                       .options[document.getElementById('room').selectedIndex].innerText,
+        total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
+        comments:  document.getElementById('comments').value
+      };
+      
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify(p),
+        mode: 'cors'
+      })
+      .then(r => r.json())
+      .then(r => {
+        if (r.result === 'success') {
+          document.getElementById('bookingID').textContent = p.booking_id;  // Отображаем в модальном окне
+          openModal();
+          document.getElementById('bookingForm').reset();
+          document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
+          document.getElementById('submitBtn').textContent = 'Забронировать';
+        } else {
+          showToast('Ошибка бронирования. Попробуйте снова.');
         }
-      
-        const p = {
-          booking_id: bookingID,  // Убедитесь, что передаете правильное значение
-          full_name: document.getElementById('full_name').value,
-          phone:     document.getElementById('phone').value,
-          email:     document.getElementById('email').value,
-          guests:    document.getElementById('guests').value,
-          checkin:   document.getElementById('checkin').value,
-          checkout:  document.getElementById('checkout').value,
-          room_id:   document.getElementById('room').value,
-          room_type: document.getElementById('room')
-                         .options[document.getElementById('room').selectedIndex].innerText,
-          total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
-          comments:  document.getElementById('comments').value
-        };
-      
-        // Логируем передаваемые данные для отладки
-        console.log("Переданные данные: ", p);
-      
-        fetch(API, {
-          method: 'POST',
-          body: JSON.stringify(p),
-          mode: 'cors'
-        })
-        .then(r => r.json())
-        .then(r => {
-          if (r.result === 'success') {
-            const bookingID = generateBookingID(); // Генерация ID бронирования
-            document.getElementById('bookingID').textContent = bookingID; // Отображаем в модальном окне
-            openModal();
-            document.getElementById('bookingForm').reset();
-            document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
-            document.getElementById('submitBtn').textContent = 'Забронировать';
-          } else {
-            showToast('Ошибка бронирования. Попробуйте снова.');
-          }
-        })
-        .catch(_ => showToast('Ошибка отправки формы.'))
-        .finally(_ => {
-          btn.classList.remove('loading');
-          btn.disabled = true;
-          showLoader(false);
-        });
+      })
+      .catch(_ => showToast('Ошибка отправки формы.'))
+      .finally(_ => {
+        btn.classList.remove('loading');
+        btn.disabled = true;
+        showLoader(false);
       });
     });
 
