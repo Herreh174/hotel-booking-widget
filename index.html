@@ -36,7 +36,7 @@
 </head>
 <body>
 
-  <!-- Форма -->
+  <!-- Форма для бронирования -->
   <div style="max-width:600px; margin:0 auto; padding:20px;
               background:#fff; border-radius:12px;
               box-shadow:0 0 20px rgba(0,0,0,0.05);
@@ -117,6 +117,20 @@
       </button>
     </form>
   </div>
+
+  <!-- Модальное окно успеха -->
+  <div id="successModal" class="modal">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-icon">✅</div>
+      <h3>Спасибо за бронирование!</h3>
+      <p>Ваш ID бронирования: <span id="bookingID"></span></p>
+      <p>Мы скоро свяжемся с вами для подтверждения.</p>
+      <button onclick="closeModal()" class="modal-button">Закрыть</button>
+    </div>
+  </div>
+
+  <!-- Контейнер для тостов -->
+  <div id="toastContainer"></div>
 
   <!-- СКРИПТ -->
   <script>
@@ -219,6 +233,74 @@
       );
       document.getElementById('room').addEventListener('change', updateTotalPrice);
     });
+
+    document.getElementById('bookingForm').addEventListener('submit', e => {
+      e.preventDefault();
+
+      const btn = document.getElementById('submitBtn');
+      btn.classList.add('loading');
+
+      if (!document.getElementById('agree').checked) {
+        showToast('Нужно согласиться с условиями проживания!');
+        btn.classList.remove('loading');
+        return;
+      }
+
+      const roomSelect = document.getElementById('room');
+      const selectedRoom = roomSelect.options[roomSelect.selectedIndex];
+
+      const p = {
+        booking_id: 'N-' + Math.floor(Math.random() * (99999999 - 1000 + 1)) + 1000,
+        full_name: document.getElementById('full_name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        guests: document.getElementById('guests').value,
+        checkin: document.getElementById('checkin').value,
+        checkout: document.getElementById('checkout').value,
+        room_id: selectedRoom.value,
+        room_type: selectedRoom.textContent,
+        total_price: document.getElementById('submitBtn').textContent.match(/\d+/)[0],
+        comments: document.getElementById('comments').value
+      };
+
+      console.log("Передаваемые данные: ", p);
+
+      fetch(API, {
+        method: 'POST',
+        body: JSON.stringify(p),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result === 'success') {
+          document.getElementById('bookingID').textContent = p.booking_id;
+          openModal();
+          document.getElementById('bookingForm').reset();
+          document.getElementById('room').innerHTML = '<option value="">Сначала выберите даты и гостей</option>';
+          document.getElementById('submitBtn').textContent = 'Забронировать';
+        } else {
+          showToast('Ошибка бронирования. Попробуйте снова.');
+        }
+      })
+      .catch(error => showToast('Ошибка отправки формы.'))
+      .finally(() => {
+        btn.classList.remove('loading');
+        btn.disabled = true;
+        showLoader(false);
+      });
+    });
+
+    function openModal() {
+      document.getElementById('successModal').style.display = 'flex';
+      setTimeout(closeModal, 5000);
+    }
+
+    function closeModal() {
+      document.getElementById('successModal').style.display = 'none';
+    }
+    document.getElementById('successModal').addEventListener('click', closeModal);
   </script>
 </body>
 </html>
