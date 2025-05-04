@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Бронирование номера</title>
   <style>
-    /* Ваши стили */
+    /* Основные стили */
     #bookingForm { animation: fadeIn 1s ease forwards; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
     .toast { position:fixed;top:20px;right:20px;background:#FFD700;color:#333;
@@ -40,13 +40,11 @@
   <div class="container">
     <h2 style="text-align:center;color:#333;">Бронирование номера</h2>
 
-    <!-- Выбор комнаты и дат -->
+    <!-- Выбор номера и дат -->
     <div id="selection">
       <div>
         <label for="room">Номер</label>
-        <select id="room" disabled>
-          <option>Загрузка...</option>
-        </select>
+        <select id="room" disabled><option>Загрузка…</option></select>
       </div>
       <div>
         <label for="checkin">Дата заезда</label>
@@ -59,7 +57,7 @@
       <div id="datesError"></div>
     </div>
 
-    <!-- Форма данных гостя (появляется после успешной проверки) -->
+    <!-- Форма данных гостя -->
     <form id="bookingForm">
       <div id="guestFields">
         <div>
@@ -107,35 +105,12 @@
       document.getElementById('successModal').style.display = 'none';
     }
 
-    // Минимальные даты — с завтрашнего дня
-    document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date(), tm = new Date(today);
-      tm.setDate(tm.getDate() + 1);
-      const min = tm.toISOString().split('T')[0];
-      document.getElementById('checkin').min = min;
-      document.getElementById('checkout').min = min;
-      loadRooms();
-    });
-
-    // 1) Загружаем список комнат сразу
-    function loadRooms() {
-      const cb = 'displayRooms';
-      const old = document.getElementById('jsonpRooms');
-      if (old) old.remove();
-      const s = document.createElement('script');
-      s.src = `${API}?list_rooms=1&callback=${cb}`;
-      s.id  = 'jsonpRooms';
-      document.body.appendChild(s);
-    }
-
-    // 2) Заполняем селект комнат
-    function displayRooms(res) {
+    // Глобальные JSONP-коллбэки
+    window.displayRooms = function(res) {
       const sel = document.getElementById('room');
       sel.innerHTML = '';
       if (res.error) {
-        sel.innerHTML = `<option>${res.error}</option>`;
-        sel.disabled = true;
-        return;
+        sel.innerHTML = `<option>${res.error}</option>`; sel.disabled = true; return;
       }
       res.rooms.forEach(r => {
         if (r.status === 'available' || r.status === '') {
@@ -146,91 +121,97 @@
         }
       });
       sel.disabled = false;
-    }
+    };
 
-    // 3) Как только есть room + обе даты — проверяем доступность
-    ['room','checkin','checkout'].forEach(id =>
-      document.getElementById(id).addEventListener('change', checkAvailability)
-    );
-
-    function checkAvailability() {
-      const roomId = document.getElementById('room').value;
-      const ci     = document.getElementById('checkin').value;
-      const co     = document.getElementById('checkout').value;
-      const errDiv = document.getElementById('datesError');
-      errDiv.textContent = '';
-      document.getElementById('guestFields').style.display = 'none';
-
-      // ждем, пока все три выбраны
-      if (!roomId || !ci || !co) return;
-      if (new Date(co) <= new Date(ci)) {
-        errDiv.textContent = 'Дата выезда должна быть позже даты заезда.';
-        return;
-      }
-
-      // JSONP-запрос свободных дат
-      const cb  = 'displayAvailableDates';
-      const old = document.getElementById('jsonpDates');
-      if (old) old.remove();
-      const s   = document.createElement('script');
-      s.id    = 'jsonpDates';
-      s.src   = `${API}?room_id=${roomId}&start=${ci}&end=${co}&callback=${cb}`;
-      document.body.appendChild(s);
-    }
-
-    // 4) Callback: получили available_dates — сравниваем
-    function displayAvailableDates(res) {
+    window.displayAvailableDates = function(res) {
       const ci = document.getElementById('checkin').value;
       const co = document.getElementById('checkout').value;
       const nights = (new Date(co) - new Date(ci)) / (1000*60*60*24);
-      const errDiv = document.getElementById('datesError');
-
-      if (res.error) {
-        errDiv.textContent = res.error;
-        return;
-      }
+      const err = document.getElementById('datesError');
+      err.textContent = '';
+      document.getElementById('guestFields').style.display = 'none';
+      if (res.error) { err.textContent = res.error; return; }
       if (res.available_dates.length < nights) {
-        errDiv.textContent = 'Номер занят в некоторые из выбранных дат.';
-        return;
+        err.textContent = 'Номер занят в некоторые из выбранных дат.'; return;
       }
-
-      // всё свободно — показываем форму гостя
-      errDiv.textContent = '';
       document.getElementById('guestFields').style.display = 'block';
+    };
+
+    // Загрузка списка комнат
+    function loadRooms() {
+      const cb = 'displayRooms', old = document.getElementById('jsonpRooms');
+      if (old) old.remove();
+      const s = document.createElement('script');
+      s.src = `${API}?list_rooms=1&callback=${cb}`;
+      s.id  = 'jsonpRooms';
+      document.body.appendChild(s);
     }
 
-    // 5) Отправляем бронирование
-    document.getElementById('bookingForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const data = {
-        booking_id: 'N-' + (Math.floor(Math.random()*99999999) + 1000),
-        full_name:  document.getElementById('full_name').value,
-        phone:      document.getElementById('phone').value,
-        email:      document.getElementById('email').value,
-        guests:     1,
-        checkin:    document.getElementById('checkin').value,
-        checkout:   document.getElementById('checkout').value,
-        room_id:    document.getElementById('room').value,
-        room_type:  document.getElementById('room').selectedOptions[0].textContent,
-        total_price:'—',
-        comments:   document.getElementById('comments').value
-      };
+    // Проверка доступности, когда есть room + обе даты
+    function checkAvailability() {
+      const room = document.getElementById('room').value;
+      const ci   = document.getElementById('checkin').value;
+      const co   = document.getElementById('checkout').value;
+      const err  = document.getElementById('datesError');
+      err.textContent = '';
+      document.getElementById('guestFields').style.display = 'none';
+      if (!room || !ci || !co) return;
+      if (new Date(co) <= new Date(ci)) { err.textContent = 'Дата выезда должна быть позже заезда.'; return; }
+      const cb = 'displayAvailableDates', old = document.getElementById('jsonpDates');
+      if (old) old.remove();
+      const s = document.createElement('script');
+      s.src = `${API}?room_id=${room}&start=${ci}&end=${co}&callback=${cb}`;
+      s.id  = 'jsonpDates';
+      document.body.appendChild(s);
+    }
 
-      fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      .then(r => r.json())
-      .then(d => {
-        if (d.result === 'success') {
-          document.getElementById('bookingID').textContent = data.booking_id;
-          document.getElementById('successModal').style.display = 'flex';
-        } else {
-          showToast('Ошибка: ' + (d.error||'неизвестная'));
-        }
-      })
-      .catch(() => showToast('Сетевая ошибка при отправке.'));
+    document.addEventListener('DOMContentLoaded', () => {
+      // Минимальные даты
+      const t=new Date(), tm=new Date(t); tm.setDate(tm.getDate()+1);
+      const min = tm.toISOString().split('T')[0];
+      document.getElementById('checkin').min = min;
+      document.getElementById('checkout').min = min;
+
+      // Сразу загружаем комнаты
+      loadRooms();
+
+      // Слушатели на изменения
+      ['room','checkin','checkout'].forEach(id =>
+        document.getElementById(id).addEventListener('change', checkAvailability)
+      );
+
+      // Отправка формы
+      document.getElementById('bookingForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const data = {
+          booking_id: 'N-' + (Math.floor(Math.random()*99999999)+1000),
+          full_name:  document.getElementById('full_name').value,
+          phone:      document.getElementById('phone').value,
+          email:      document.getElementById('email').value,
+          guests:     1,
+          checkin:    document.getElementById('checkin').value,
+          checkout:   document.getElementById('checkout').value,
+          room_id:    document.getElementById('room').value,
+          room_type:  document.getElementById('room').selectedOptions[0].textContent,
+          total_price:'—',
+          comments:   document.getElementById('comments').value
+        };
+        fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(r=>r.json())
+        .then(d=>{
+          if (d.result==='success') {
+            document.getElementById('bookingID').textContent = data.booking_id;
+            document.getElementById('successModal').style.display = 'flex';
+          } else {
+            showToast('Ошибка: '+(d.error||'неизвестная'));
+          }
+        })
+        .catch(()=>showToast('Сетевая ошибка при отправке.'));
+      });
     });
   </script>
 </body>
