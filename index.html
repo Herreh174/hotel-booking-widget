@@ -2,196 +2,123 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Бронирование номера</title>
   <style>
-    /* Стили как раньше */
-    #bookingForm { animation: fadeIn 1s ease forwards; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
-    .toast { position:fixed;top:20px;right:20px;background:#FFD700;color:#333;
-             padding:12px 20px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.2);
-             opacity:0;animation:slideDown 0.5s ease forwards;z-index:9999; }
-    @keyframes slideDown { from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);} }
-    .modal { display:none;position:fixed;z-index:10000;left:0;top:0;width:100%;height:100%;
-             background:rgba(0,0,0,0.5);justify-content:center;align-items:center;
-             animation:fadeIn 0.4s forwards; }
-    .modal-content{background:#fff;padding:30px 40px;border-radius:16px;text-align:center;
-                    max-width:400px;transform:scale(0.8);opacity:0;animation:zoomIn 0.4s forwards;}
-    .modal-icon{font-size:50px;color:#FFD700;margin-bottom:15px;}
-    .modal-button{margin-top:20px;padding:10px 20px;background:#FFD700;border:none;border-radius:8px;
-                  cursor:pointer;color:#333;font-weight:bold;transition:background .3s;}
-    .modal-button:hover{background:#e6c200;}
-    @keyframes zoomIn{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
-    .container{max-width:600px;margin:30px auto;padding:20px;background:#fff;border-radius:12px;
-               box-shadow:0 0 20px rgba(0,0,0,0.05);font-family:'Helvetica Neue',Arial,sans-serif;}
-    .container div{margin-bottom:15px;}
-    .container label{display:block;margin-bottom:5px;color:#333;}
-    .container input, .container select, .container textarea, .container button {
-      width:100%;padding:10px;border:2px solid #FFD700;border-radius:8px;font-size:16px;
-      box-sizing:border-box;
+    body { font-family: Arial,sans-serif; background:#f7f7f7; }
+    .container { max-width:500px;margin:50px auto;padding:20px;background:#fff;
+                 border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    label { display:block;margin-bottom:5px;color:#333; }
+    select,input,textarea,button {
+      width:100%;padding:8px;margin-bottom:15px;
+      border:1px solid #ccc;border-radius:4px;
+      font-size:14px; box-sizing:border-box;
     }
-    #guestFields { display: none; }
-    #submitBtn{background:#FFD700;color:#333;font-weight:bold;cursor:pointer;transition:background .3s;}
-    #submitBtn:hover:not([disabled]){background:#e6c200;}
-    #datesError { color: red; margin-top: -10px; margin-bottom: 15px; }
+    button { background:#28a745;color:#fff;border:none;cursor:pointer; }
+    button:disabled { background:#ccc;cursor:not-allowed; }
+    .error { color:red;margin-top:-10px;margin-bottom:10px; }
+    #guestFields { display:none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2 style="text-align:center;color:#333;">Бронирование номера</h2>
+    <h2>Бронирование номера</h2>
+    <!-- выбор -->
+    <label>Номер</label>
+    <select id="room" disabled><option>Загрузка...</option></select>
+    <label>Дата заезда</label>
+    <input type="date" id="checkin"/>
+    <label>Дата выезда</label>
+    <input type="date" id="checkout"/>
+    <div id="datesError" class="error"></div>
 
-    <!-- Выбор -->
-    <div id="selection">
-      <div>
-        <label for="room">Номер</label>
-        <select id="room" disabled><option>Загрузка…</option></select>
-      </div>
-      <div>
-        <label for="checkin">Дата заезда</label>
-        <input type="date" id="checkin" required>
-      </div>
-      <div>
-        <label for="checkout">Дата выезда</label>
-        <input type="date" id="checkout" required>
-      </div>
-      <div id="datesError"></div>
-    </div>
-
-    <!-- Форма гостя -->
-    <form id="bookingForm">
-      <div id="guestFields">
-        <div>
-          <label for="full_name">ФИО</label>
-          <input type="text" id="full_name" required placeholder="Иванов Иван">
-        </div>
-        <div>
-          <label for="phone">Телефон</label>
-          <input type="tel" id="phone" required placeholder="8-(999)-999-99-99">
-        </div>
-        <div>
-          <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="email@example.com">
-        </div>
-        <div>
-          <label for="comments">Пожелания</label>
-          <textarea id="comments" placeholder="Например: нужна детская кроватка"></textarea>
-        </div>
-        <button id="submitBtn" type="submit">Подтвердить бронирование</button>
-      </div>
-    </form>
-  </div>
-
-  <div id="toastContainer"></div>
-  <div id="successModal" class="modal">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-icon">✅</div>
-      <h3>Спасибо за бронирование!</h3>
-      <p>ID: <span id="bookingID"></span></p>
-      <button class="modal-button" onclick="closeModal()">Закрыть</button>
+    <!-- данные гостя -->
+    <div id="guestFields">
+      <label>ФИО</label><input id="full_name" type="text"/>
+      <label>Телефон</label><input id="phone" type="tel"/>
+      <label>Email</label><input id="email" type="email"/>
+      <label>Комментарий</label><textarea id="comments"></textarea>
+      <button id="submitBtn">Подтвердить</button>
     </div>
   </div>
 
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbwckll7S9olOyNZioF9oCOnAdDaeaeNc3ECUH-3wuhoo2xWikTP6GUP1Qy_ncAp9fOp/exec';
+    const API = 'ВАШ_APPS_SCRIPT_URL';  // <-- вставьте ваш URL
 
-    function showToast(msg) {
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.innerText = msg;
-      document.getElementById('toastContainer').appendChild(t);
-      setTimeout(() => t.remove(), 3000);
-    }
-    function closeModal() {
-      document.getElementById('successModal').style.display = 'none';
-    }
-
-    // JSONP callbacks
-    window.displayRooms = function(res) {
+    // JSONP коллбеки
+    window.displayRooms = res => {
       const sel = document.getElementById('room');
       sel.innerHTML = '';
       if (res.error) {
         sel.innerHTML = `<option>${res.error}</option>`;
-        sel.disabled = true;
       } else {
-        res.rooms.forEach(r => {
-          if (r.status === 'available' || r.status === '') {
+        res.rooms.forEach(r=>{
+          if (r.status==='available'||r.status==='') {
             const o = document.createElement('option');
             o.value = r.room_id;
-            o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
+            o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price}₽`;
             sel.appendChild(o);
           }
         });
-        sel.disabled = false;
       }
+      sel.disabled = false;
+      tryCheck();
     };
 
-    window.displayAvailableDates = function(res) {
+    window.displayAvailableDates = res => {
       const ci = document.getElementById('checkin').value;
       const co = document.getElementById('checkout').value;
-      const nights = (new Date(co) - new Date(ci)) / (1000*60*60*24);
+      const days = (new Date(co)-new Date(ci))/(1000*60*60*24);
       const err = document.getElementById('datesError');
       err.textContent = '';
       document.getElementById('guestFields').style.display = 'none';
-      if (res.error) {
-        err.textContent = res.error; return;
-      }
-      if (res.available_dates.length < nights) {
-        err.textContent = 'Номер занят в некоторые из выбранных дат.'; return;
+      if (res.error) { err.textContent = res.error; return; }
+      if (res.available_dates.length < days) {
+        err.textContent = 'Номер занят в некоторые дни.'; return;
       }
       document.getElementById('guestFields').style.display = 'block';
     };
 
-    function loadRooms() {
-      const cb = 'displayRooms';
-      const old = document.getElementById('jsonpRooms');
-      if (old) old.remove();
+    // создаём и вставляем JSONP-скрипт
+    function jsonp(url) {
       const s = document.createElement('script');
-      s.id  = 'jsonpRooms';
-      s.src = `${API}?list_rooms=1&callback=${cb}`;
+      s.src = url;
       document.body.appendChild(s);
     }
 
-    function checkAvailability() {
+    // загрузка комнат
+    function loadRooms() {
+      jsonp(`${API}?list_rooms=1&callback=displayRooms`);
+    }
+
+    // проверка availability
+    function tryCheck() {
       const room = document.getElementById('room').value;
       const ci   = document.getElementById('checkin').value;
       const co   = document.getElementById('checkout').value;
-      const err  = document.getElementById('datesError');
-      err.textContent = '';
-      document.getElementById('guestFields').style.display = 'none';
-      if (!room || !ci || !co) return;
-      if (new Date(co) <= new Date(ci)) {
-        err.textContent = 'Дата выезда должна быть позже даты заезда.'; return;
+      if (!room||!ci||!co) return;
+      if (new Date(co)<=new Date(ci)) {
+        document.getElementById('datesError').textContent = 'Дата выезда позже заезда';
+        return;
       }
-      const cb = 'displayAvailableDates';
-      const old = document.getElementById('jsonpDates');
-      if (old) old.remove();
-      const s = document.createElement('script');
-      s.id  = 'jsonpDates';
-      s.src = `${API}?room_id=${room}&start=${ci}&end=${co}&callback=${cb}`;
-      document.body.appendChild(s);
+      jsonp(`${API}?room_id=${room}&start=${ci}&end=${co}&callback=displayAvailableDates`);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Минимальные даты
-      const t = new Date(), tm = new Date(t);
-      tm.setDate(tm.getDate() + 1);
+    // события
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // min date = завтра
+      const t=new Date(), tm=new Date(t);
+      tm.setDate(tm.getDate()+1);
       const min = tm.toISOString().split('T')[0];
-      document.getElementById('checkin').min = min;
-      document.getElementById('checkout').min = min;
-
-      // Загрузка комнат
+      document.getElementById('checkin').min=min;
+      document.getElementById('checkout').min=min;
       loadRooms();
-
-      // Слушатели
-      ['room','checkin','checkout'].forEach(id =>
-        document.getElementById(id).addEventListener('change', checkAvailability)
+      ['room','checkin','checkout'].forEach(id=>
+        document.getElementById(id).addEventListener('change',tryCheck)
       );
-
-      // Отправка
-      document.getElementById('bookingForm').addEventListener('submit', e => {
-        e.preventDefault();
+      document.getElementById('submitBtn').addEventListener('click',()=>{
         const data = {
-          booking_id: 'N-' + (Math.floor(Math.random()*99999999) + 1000),
+          booking_id: 'N-'+(Math.random()*1e8|0),
           full_name:  document.getElementById('full_name').value,
           phone:      document.getElementById('phone').value,
           email:      document.getElementById('email').value,
@@ -204,20 +131,13 @@
           comments:   document.getElementById('comments').value
         };
         fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        })
-        .then(r => r.json())
-        .then(d => {
-          if (d.result === 'success') {
-            document.getElementById('bookingID').textContent = data.booking_id;
-            document.getElementById('successModal').style.display = 'flex';
-          } else {
-            showToast('Ошибка: ' + (d.error||'неизвестная'));
-          }
-        })
-        .catch(()=>showToast('Сетевая ошибка.'));
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(data)
+        }).then(r=>r.json()).then(d=>{
+          if(d.result==='success') alert('OK, ID='+d.booking_id);
+          else alert('Error: '+d.error);
+        });
       });
     });
   </script>
