@@ -6,16 +6,16 @@
   <title>Бронирование номера</title>
   <style>
     body { font-family: Arial,sans-serif; background:#f7f7f7; }
-    .container { max-width:500px; margin:50px auto; padding:20px;
-                 background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    label { display:block; margin-bottom:5px; color:#333; }
+    .container { max-width:500px;margin:50px auto;padding:20px;background:#fff;border-radius:8px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    label { display:block;margin-bottom:5px;color:#333; }
     select,input,textarea,button {
-      width:100%; padding:8px; margin-bottom:15px;
-      border:1px solid #ccc; border-radius:4px; box-sizing:border-box;
+      width:100%;padding:8px;margin-bottom:15px;
+      border:1px solid #ccc;border-radius:4px;box-sizing:border-box;
     }
-    button { background:#28a745; color:#fff; border:none; cursor:pointer; }
-    button:disabled { background:#ccc; cursor:not-allowed; }
-    .error { color:red; margin-top:-10px; margin-bottom:10px; }
+    button { background:#28a745;color:#fff;border:none;cursor:pointer; }
+    button:disabled { background:#ccc;cursor:not-allowed; }
+    .error { color:red;margin-top:-10px;margin-bottom:10px; }
     #guestFields { display:none; }
   </style>
 </head>
@@ -23,7 +23,6 @@
   <div class="container">
     <h2 style="text-align:center;">Бронирование номера</h2>
 
-    <!-- Выбор комнаты и дат -->
     <label>Номер</label>
     <select id="room" disabled><option>Загрузка...</option></select>
 
@@ -35,7 +34,6 @@
 
     <div id="datesError" class="error"></div>
 
-    <!-- Данные гостя -->
     <div id="guestFields">
       <label>ФИО</label><input id="full_name" type="text"/>
       <label>Телефон</label><input id="phone" type="tel"/>
@@ -46,29 +44,26 @@
   </div>
 
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbyHXv0Co4J9hQAqXwOkbtKuhG-dH15u263G779DSIq_MkwsMe1ZnlCmRdDatG75Mw/exec'; // <-- вставьте URL веб-приложения
+    const API = 'https://script.google.com/macros/s/AKfycbyHXv0Co4J9hQAqXwOkbtKuhG-dH15u263G779DSIq_MkwsMe1ZnlCmRdDatG75Mw/exec';  // <-- убедитесь, что это новый URL
 
     async function getJSON(url) {
-      const r = await fetch(url);
-      return r.json();
+      const res = await fetch(url);
+      return res.json();
     }
 
     async function loadRooms() {
       const data = await getJSON(`${API}?list_rooms=1`);
       const sel  = document.getElementById('room');
       sel.innerHTML = '';
-      if (data.error) {
-        sel.innerHTML = `<option>${data.error}</option>`;
-      } else {
-        data.rooms.forEach(r => {
-          if (r.status === 'available' || r.status === '') {
-            const o = document.createElement('option');
-            o.value = r.room_id;
-            o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price}₽`;
-            sel.appendChild(o);
-          }
-        });
-      }
+      if (data.error) sel.innerHTML = `<option>${data.error}</option>`;
+      else data.rooms.forEach(r=>{
+        if (r.status==='available'||r.status==='') {
+          const o = document.createElement('option');
+          o.value = r.room_id;
+          o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price}₽`;
+          sel.appendChild(o);
+        }
+      });
       sel.disabled = false;
       checkAvailability();
     }
@@ -80,18 +75,14 @@
       const err  = document.getElementById('datesError');
       err.textContent = '';
       document.getElementById('guestFields').style.display = 'none';
-
-      if (!room || !ci || !co) return;
-      if (new Date(co) <= new Date(ci)) {
-        err.textContent = 'Дата выезда должна быть позже даты заезда.';
-        return;
+      if (!room||!ci||!co) return;
+      if (new Date(co)<=new Date(ci)) {
+        err.textContent = 'Дата выезда должна быть позже даты заезда.'; return;
       }
-
       const data = await getJSON(`${API}?room_id=${room}&start=${ci}&end=${co}`);
-      if (data.error) {
-        err.textContent = data.error;
-      } else {
-        const nights = (new Date(co) - new Date(ci)) / (1000*60*60*24);
+      if (data.error) err.textContent = data.error;
+      else {
+        const nights = (new Date(co)-new Date(ci))/(1000*60*60*24);
         if (data.available_dates.length < nights) {
           err.textContent = 'Номер занят в некоторые из выбранных дат.';
         } else {
@@ -102,7 +93,7 @@
 
     async function submitBooking() {
       const payload = {
-        booking_id: 'N-' + (Math.random()*1e8|0),
+        booking_id: 'N-'+(Math.random()*1e8|0),
         full_name:  document.getElementById('full_name').value,
         phone:      document.getElementById('phone').value,
         email:      document.getElementById('email').value,
@@ -115,24 +106,23 @@
         comments:   document.getElementById('comments').value
       };
       const res = await fetch(API, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (data.result === 'success') {
-        alert('Бронирование успешно! ID: ' + data.booking_id);
+      const d = await res.json();
+      if (d.result==='success') {
+        alert('Успех! ID брони: '+d.booking_id);
         location.reload();
       } else {
-        alert('Ошибка: ' + (data.error||'неизвестная'));
+        alert('Ошибка: '+(d.error||'неизвестная'));
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const t  = new Date(), tm = new Date(t);
-      tm.setDate(tm.getDate()+1);
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const t=new Date(), tm=new Date(t); tm.setDate(tm.getDate()+1);
       const min = tm.toISOString().split('T')[0];
-      document.getElementById('checkin').min  = min;
+      document.getElementById('checkin').min = min;
       document.getElementById('checkout').min = min;
 
       document.getElementById('room').addEventListener('change', checkAvailability);
