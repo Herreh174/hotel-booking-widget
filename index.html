@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Бронирование номера</title>
   <style>
-    /* Основные стили */
+    /* Стили как раньше */
     #bookingForm { animation: fadeIn 1s ease forwards; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
     .toast { position:fixed;top:20px;right:20px;background:#FFD700;color:#333;
@@ -40,7 +40,7 @@
   <div class="container">
     <h2 style="text-align:center;color:#333;">Бронирование номера</h2>
 
-    <!-- Выбор номера и дат -->
+    <!-- Выбор -->
     <div id="selection">
       <div>
         <label for="room">Номер</label>
@@ -57,7 +57,7 @@
       <div id="datesError"></div>
     </div>
 
-    <!-- Форма данных гостя -->
+    <!-- Форма гостя -->
     <form id="bookingForm">
       <div id="guestFields">
         <div>
@@ -92,7 +92,7 @@
   </div>
 
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbx4VyynFK5ak_VZZ6E6o-XbQpV6jbtcEe3vU4hbAkE9fuJ8OB-s_hhwD5mImLCyY9GD/exec';
+    const API = 'https://script.google.com/macros/s/AKfycbwckll7S9olOyNZioF9oCOnAdDaeaeNc3ECUH-3wuhoo2xWikTP6GUP1Qy_ncAp9fOp/exec';
 
     function showToast(msg) {
       const t = document.createElement('div');
@@ -105,22 +105,24 @@
       document.getElementById('successModal').style.display = 'none';
     }
 
-    // Глобальные JSONP-коллбэки
+    // JSONP callbacks
     window.displayRooms = function(res) {
       const sel = document.getElementById('room');
       sel.innerHTML = '';
       if (res.error) {
-        sel.innerHTML = `<option>${res.error}</option>`; sel.disabled = true; return;
+        sel.innerHTML = `<option>${res.error}</option>`;
+        sel.disabled = true;
+      } else {
+        res.rooms.forEach(r => {
+          if (r.status === 'available' || r.status === '') {
+            const o = document.createElement('option');
+            o.value = r.room_id;
+            o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
+            sel.appendChild(o);
+          }
+        });
+        sel.disabled = false;
       }
-      res.rooms.forEach(r => {
-        if (r.status === 'available' || r.status === '') {
-          const o = document.createElement('option');
-          o.value = r.room_id;
-          o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price} ₽/ночь`;
-          sel.appendChild(o);
-        }
-      });
-      sel.disabled = false;
     };
 
     window.displayAvailableDates = function(res) {
@@ -130,24 +132,25 @@
       const err = document.getElementById('datesError');
       err.textContent = '';
       document.getElementById('guestFields').style.display = 'none';
-      if (res.error) { err.textContent = res.error; return; }
+      if (res.error) {
+        err.textContent = res.error; return;
+      }
       if (res.available_dates.length < nights) {
         err.textContent = 'Номер занят в некоторые из выбранных дат.'; return;
       }
       document.getElementById('guestFields').style.display = 'block';
     };
 
-    // Загрузка списка комнат
     function loadRooms() {
-      const cb = 'displayRooms', old = document.getElementById('jsonpRooms');
+      const cb = 'displayRooms';
+      const old = document.getElementById('jsonpRooms');
       if (old) old.remove();
       const s = document.createElement('script');
-      s.src = `${API}?list_rooms=1&callback=${cb}`;
       s.id  = 'jsonpRooms';
+      s.src = `${API}?list_rooms=1&callback=${cb}`;
       document.body.appendChild(s);
     }
 
-    // Проверка доступности, когда есть room + обе даты
     function checkAvailability() {
       const room = document.getElementById('room').value;
       const ci   = document.getElementById('checkin').value;
@@ -156,35 +159,39 @@
       err.textContent = '';
       document.getElementById('guestFields').style.display = 'none';
       if (!room || !ci || !co) return;
-      if (new Date(co) <= new Date(ci)) { err.textContent = 'Дата выезда должна быть позже заезда.'; return; }
-      const cb = 'displayAvailableDates', old = document.getElementById('jsonpDates');
+      if (new Date(co) <= new Date(ci)) {
+        err.textContent = 'Дата выезда должна быть позже даты заезда.'; return;
+      }
+      const cb = 'displayAvailableDates';
+      const old = document.getElementById('jsonpDates');
       if (old) old.remove();
       const s = document.createElement('script');
-      s.src = `${API}?room_id=${room}&start=${ci}&end=${co}&callback=${cb}`;
       s.id  = 'jsonpDates';
+      s.src = `${API}?room_id=${room}&start=${ci}&end=${co}&callback=${cb}`;
       document.body.appendChild(s);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       // Минимальные даты
-      const t=new Date(), tm=new Date(t); tm.setDate(tm.getDate()+1);
+      const t = new Date(), tm = new Date(t);
+      tm.setDate(tm.getDate() + 1);
       const min = tm.toISOString().split('T')[0];
       document.getElementById('checkin').min = min;
       document.getElementById('checkout').min = min;
 
-      // Сразу загружаем комнаты
+      // Загрузка комнат
       loadRooms();
 
-      // Слушатели на изменения
+      // Слушатели
       ['room','checkin','checkout'].forEach(id =>
         document.getElementById(id).addEventListener('change', checkAvailability)
       );
 
-      // Отправка формы
+      // Отправка
       document.getElementById('bookingForm').addEventListener('submit', e => {
         e.preventDefault();
         const data = {
-          booking_id: 'N-' + (Math.floor(Math.random()*99999999)+1000),
+          booking_id: 'N-' + (Math.floor(Math.random()*99999999) + 1000),
           full_name:  document.getElementById('full_name').value,
           phone:      document.getElementById('phone').value,
           email:      document.getElementById('email').value,
@@ -201,16 +208,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         })
-        .then(r=>r.json())
-        .then(d=>{
-          if (d.result==='success') {
+        .then(r => r.json())
+        .then(d => {
+          if (d.result === 'success') {
             document.getElementById('bookingID').textContent = data.booking_id;
             document.getElementById('successModal').style.display = 'flex';
           } else {
-            showToast('Ошибка: '+(d.error||'неизвестная'));
+            showToast('Ошибка: ' + (d.error||'неизвестная'));
           }
         })
-        .catch(()=>showToast('Сетевая ошибка при отправке.'));
+        .catch(()=>showToast('Сетевая ошибка.'));
       });
     });
   </script>
