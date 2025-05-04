@@ -2,18 +2,20 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Бронирование номера</title>
   <style>
-    body { font-family: Arial,sans-serif; background:#f0f0f0; }
-    .container { max-width:500px;margin:50px auto;padding:20px;background:#fff;
-                 border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    label { display:block;margin-bottom:5px;color:#333; }
-    select,input,textarea,button { width:100%;padding:8px;margin-bottom:15px;
-      border:1px solid #ccc;border-radius:4px;box-sizing:border-box; }
-    button { background:#28a745;color:#fff;border:none;cursor:pointer; }
-    button:disabled { background:#ccc;cursor:not-allowed; }
-    .error { color:red;margin-top:-10px;margin-bottom:10px; }
+    body { font-family: Arial,sans-serif; background:#f7f7f7; }
+    .container { max-width:500px; margin:50px auto; padding:20px;
+                 background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    label { display:block; margin-bottom:5px; color:#333; }
+    select,input,textarea,button {
+      width:100%; padding:8px; margin-bottom:15px;
+      border:1px solid #ccc; border-radius:4px; box-sizing:border-box;
+    }
+    button { background:#28a745; color:#fff; border:none; cursor:pointer; }
+    button:disabled { background:#ccc; cursor:not-allowed; }
+    .error { color:red; margin-top:-10px; margin-bottom:10px; }
     #guestFields { display:none; }
   </style>
 </head>
@@ -21,7 +23,7 @@
   <div class="container">
     <h2 style="text-align:center;">Бронирование номера</h2>
 
-    <!-- выбор -->
+    <!-- Выбор комнаты и дат -->
     <label>Номер</label>
     <select id="room" disabled><option>Загрузка...</option></select>
 
@@ -33,7 +35,7 @@
 
     <div id="datesError" class="error"></div>
 
-    <!-- данные гостя -->
+    <!-- Данные гостя -->
     <div id="guestFields">
       <label>ФИО</label><input id="full_name" type="text"/>
       <label>Телефон</label><input id="phone" type="tel"/>
@@ -44,18 +46,16 @@
   </div>
 
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbwckll7S9olOyNZioF9oCOnAdDaeaeNc3ECUH-3wuhoo2xWikTP6GUP1Qy_ncAp9fOp/exec';  // <-- замените на URL вашего Apps Script
+    const API = 'ВАШ_APPS_SCRIPT_URL'; // <-- вставьте URL веб-приложения
 
-    // Получить JSON и распарсить
     async function getJSON(url) {
-      const res = await fetch(url);
-      return res.json();
+      const r = await fetch(url);
+      return r.json();
     }
 
-    // Загрузка комнат
     async function loadRooms() {
       const data = await getJSON(`${API}?list_rooms=1`);
-      const sel = document.getElementById('room');
+      const sel  = document.getElementById('room');
       sel.innerHTML = '';
       if (data.error) {
         sel.innerHTML = `<option>${data.error}</option>`;
@@ -73,7 +73,6 @@
       checkAvailability();
     }
 
-    // Проверка доступности
     async function checkAvailability() {
       const room = document.getElementById('room').value;
       const ci   = document.getElementById('checkin').value;
@@ -87,6 +86,7 @@
         err.textContent = 'Дата выезда должна быть позже даты заезда.';
         return;
       }
+
       const data = await getJSON(`${API}?room_id=${room}&start=${ci}&end=${co}`);
       if (data.error) {
         err.textContent = data.error;
@@ -100,10 +100,9 @@
       }
     }
 
-    // Отправка брони
     async function submitBooking() {
       const payload = {
-        booking_id: 'N-'+(Math.random()*1e8|0),
+        booking_id: 'N-' + (Math.random()*1e8|0),
         full_name:  document.getElementById('full_name').value,
         phone:      document.getElementById('phone').value,
         email:      document.getElementById('email').value,
@@ -116,8 +115,8 @@
         comments:   document.getElementById('comments').value
       };
       const res = await fetch(API, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -125,16 +124,15 @@
         alert('Бронирование успешно! ID: ' + data.booking_id);
         location.reload();
       } else {
-        alert('Ошибка бронирования: ' + (data.error||'неизвестная'));
+        alert('Ошибка: ' + (data.error||'неизвестная'));
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // min date = завтра
-      const t = new Date(), tm = new Date(t);
+      const t  = new Date(), tm = new Date(t);
       tm.setDate(tm.getDate()+1);
       const min = tm.toISOString().split('T')[0];
-      document.getElementById('checkin').min = min;
+      document.getElementById('checkin').min  = min;
       document.getElementById('checkout').min = min;
 
       document.getElementById('room').addEventListener('change', checkAvailability);
