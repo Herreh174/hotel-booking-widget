@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Бронирование номера</title>
   <style>
     body { font-family: Arial,sans-serif; background:#f7f7f7; }
@@ -44,30 +44,42 @@
   </div>
 
   <script>
-    const API = 'https://script.google.com/macros/s/AKfycbyOEV4hw23bFCRqy75hiGad0TtA-r8Laff3gHWgH4qtcn_UBdcg5pHUGfYjxP7cLCZv/exec';  // <-- убедитесь, что это новый URL
+    const API = 'ВАШ_APPS_SCRIPT_URL'; // <-- ваш Apps Script URL
 
-    async function getJSON(url) {
+    // Умный fetch: поддерживает чистый JSON и JSONP вида callback({...})
+    async function fetchJSON(url) {
       const res = await fetch(url);
-      return res.json();
+      const text = await res.text();
+      let jsonText = text.trim();
+      if (jsonText.startsWith('callback(')) {
+        // убираем callback(  и заключающий )
+        jsonText = jsonText.replace(/^.*?\(/, '').replace(/\);?\s*$/, '');
+      }
+      return JSON.parse(jsonText);
     }
 
+    // Загрузка списка комнат
     async function loadRooms() {
-      const data = await getJSON(`${API}?list_rooms=1`);
+      const data = await fetchJSON(`${API}?list_rooms=1`);
       const sel  = document.getElementById('room');
       sel.innerHTML = '';
-      if (data.error) sel.innerHTML = `<option>${data.error}</option>`;
-      else data.rooms.forEach(r=>{
-        if (r.status==='available'||r.status==='') {
-          const o = document.createElement('option');
-          o.value = r.room_id;
-          o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price}₽`;
-          sel.appendChild(o);
-        }
-      });
+      if (data.error) {
+        sel.innerHTML = `<option>${data.error}</option>`;
+      } else {
+        data.rooms.forEach(r => {
+          if (r.status === 'available' || r.status === '') {
+            const o = document.createElement('option');
+            o.value = r.room_id;
+            o.textContent = `${r.room_name} — ${r.capacity} гостей — ${r.price}₽`;
+            sel.appendChild(o);
+          }
+        });
+      }
       sel.disabled = false;
       checkAvailability();
     }
 
+    // Проверка доступности по датам
     async function checkAvailability() {
       const room = document.getElementById('room').value;
       const ci   = document.getElementById('checkin').value;
@@ -75,14 +87,18 @@
       const err  = document.getElementById('datesError');
       err.textContent = '';
       document.getElementById('guestFields').style.display = 'none';
-      if (!room||!ci||!co) return;
-      if (new Date(co)<=new Date(ci)) {
-        err.textContent = 'Дата выезда должна быть позже даты заезда.'; return;
+
+      if (!room || !ci || !co) return;
+      if (new Date(co) <= new Date(ci)) {
+        err.textContent = 'Дата выезда должна быть позже даты заезда.';
+        return;
       }
-      const data = await getJSON(`${API}?room_id=${room}&start=${ci}&end=${co}`);
-      if (data.error) err.textContent = data.error;
-      else {
-        const nights = (new Date(co)-new Date(ci))/(1000*60*60*24);
+
+      const data = await fetchJSON(`${API}?room_id=${room}&start=${ci}&end=${co}`);
+      if (data.error) {
+        err.textContent = data.error;
+      } else {
+        const nights = (new Date(co) - new Date(ci)) / (1000*60*60*24);
         if (data.available_dates.length < nights) {
           err.textContent = 'Номер занят в некоторые из выбранных дат.';
         } else {
@@ -91,6 +107,7 @@
       }
     }
 
+    // Отправка брони
     async function submitBooking() {
       const payload = {
         booking_id: 'N-'+(Math.random()*1e8|0),
@@ -106,28 +123,29 @@
         comments:   document.getElementById('comments').value
       };
       const res = await fetch(API, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload)
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
       });
       const d = await res.json();
-      if (d.result==='success') {
-        alert('Успех! ID брони: '+d.booking_id);
+      if (d.result === 'success') {
+        alert('Бронирование успешно! ID: ' + d.booking_id);
         location.reload();
       } else {
-        alert('Ошибка: '+(d.error||'неизвестная'));
+        alert('Ошибка: ' + (d.error||'неизвестная'));
       }
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
+      // Минимальные даты — с завтрашнего дня
       const t=new Date(), tm=new Date(t); tm.setDate(tm.getDate()+1);
       const min = tm.toISOString().split('T')[0];
-      document.getElementById('checkin').min = min;
+      document.getElementById('checkin').min  = min;
       document.getElementById('checkout').min = min;
 
-      document.getElementById('room').addEventListener('change', checkAvailability);
-      document.getElementById('checkin').addEventListener('change', checkAvailability);
-      document.getElementById('checkout').addEventListener('change', checkAvailability);
+      ['room','checkin','checkout'].forEach(id=>
+        document.getElementById(id).addEventListener('change', checkAvailability)
+      );
       document.getElementById('submitBtn').addEventListener('click', submitBooking);
 
       loadRooms();
